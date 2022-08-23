@@ -56,7 +56,7 @@ void MemoryMap::store8(u16 address, u8 data)
 {
 
     std::cerr << "Unhandled store8 at: " << std::hex << address
-              << " with: " << std::hex << data << '\n';
+              << " with: " << std::hex << (u16)data << '\n';
 }
 
 void MemoryMap::store16(u16 address, u16 data)
@@ -69,5 +69,5 @@ void MemoryMap::store16(u16 address, u16 data)
     }
 
     std::cerr << "Unhandled store16 at: " << std::hex << address
-              << " with: " << std::hex << data << '\n';
+              << " with: " << std::hex << (u16)data << '\n';
 }
