@@ -4,7 +4,9 @@ set(PET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt
     ${CMAKE_CURRENT_SOURCE_DIR}/cpu6502.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cpu6502.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor4.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/kernal2.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/kernal4.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/memory_map.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/memory_map.hpp
