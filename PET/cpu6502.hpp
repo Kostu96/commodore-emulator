@@ -11,24 +11,80 @@ public:
     void reset();
     void clock();
 private:
-    void op_BRK();
-    void op_ASL_ACC();
+    void push8(u8 data);
+    void push16(u16 data);
+    u8 pop8();
+    u16 pop16();
+
+    // Addressing Modes:
+    void am_IMM();
+    void am_ZPG();
+    void am_ZPX();
+    void am_ZPY();
+    void am_ABS();
+    void am_ABX();
+    void am_ABY();
+    void am_IND();
+    void am_INX();
+    void am_INY();
+
+    // Branch Instructions:
+    void op_JMP_ABS();
     void op_BPL();
+    void op_BMI();
+    void op_BEQ();
+    void op_BNE();
+    void op_BCS();
+    void op_BCC();
     void op_JSR();
-    void op_BIT_ABS();
-    void op_SEI();
-    void op_STA_ZPG();
-    void op_STA_ABS();
-    void op_STX_ABS();
-    void op_STY_ZPX();
-    void op_STA_ZPX();
+    void op_RTS();
+    
+    // Load Instructions:
+    void op_LDA();
+    void op_LDX();
+    void op_LDY();
+
+    // Store Instructions:
+    void op_STA();
+    void op_STX();
+    void op_STY();
+
+    // Transfer Instructions:
+    void op_TXA();
+    void op_TAX();
+    void op_TYA();
+    void op_TAY();
     void op_TSX();
-    void op_LDY_IMM();
-    void op_LDX_IMM();
-    void op_LDA_IMM();
+    void op_TXS();
+
+    // Stack Instructions:
+    void op_PHA();
+    void op_PLA();
+
+    // ALU Instructions:
+    void op_ADC();
+    void op_ORA();
+    void op_AND();
+    void op_LSR_ACC();
+    void op_ASL_ACC();
+    void op_BIT_ABS();
+    void op_INC();
+    void op_INX();
+    void op_DEC();
     void op_DEX();
+    void op_DEY();
+    void op_CMP();
+    void op_CPX();
+    void op_CPY();
+
+    // Flags Instructions:
+    void op_SEI();
+    void op_CLI();
     void op_CLD();
-    void op_CPX_IMM();
+    void op_CLC();
+
+    // Interrupts:
+    void op_BRK();
 
     MemoryMap& m_memoryMap;
 
@@ -56,4 +112,7 @@ private:
     u8 X;
     u8 Y;
     u8 SP;
+
+    // helper variables
+    u16 m_absoluteAddress;
 };

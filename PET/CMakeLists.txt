@@ -2,6 +2,9 @@ set(PET_TARGET_NAME pet)
 
 set(PET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt
+    ${CMAKE_CURRENT_SOURCE_DIR}/basica.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/basicb.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/basicc.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/cpu6502.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cpu6502.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/editor4.inl
@@ -23,9 +26,10 @@ target_compile_options(${PET_TARGET_NAME} PRIVATE
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic>
 )
 
-#target_link_libraries(${PET_TARGET_NAME} PRIVATE
-#    
-#)
+target_link_libraries(${PET_TARGET_NAME} PRIVATE
+    glad
+    glfw
+)
 
 set_target_properties(${PET_TARGET_NAME} PROPERTIES
     VS_DEBUGGER_WORKING_DIRECTORY $<TARGET_FILE_DIR:${PET_TARGET_NAME}>

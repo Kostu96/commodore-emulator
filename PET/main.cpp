@@ -5,7 +5,7 @@
 
 int main()
 {
-    MemoryMap memoryMap;
+    MemoryMap memoryMap{};
     CPU6502 cpu{ memoryMap };
 
     while (true)
