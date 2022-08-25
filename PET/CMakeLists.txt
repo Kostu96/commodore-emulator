@@ -1,11 +1,21 @@
 set(PET_TARGET_NAME pet)
 
+set(GLW_SOURCES
+    ${THIRD_PARTY_DIR}/glw/include/glw/buffers.hpp
+    ${THIRD_PARTY_DIR}/glw/include/glw/error_callback.inl
+    ${THIRD_PARTY_DIR}/glw/include/glw/framebuffer.hpp
+    ${THIRD_PARTY_DIR}/glw/include/glw/shader.hpp
+    ${THIRD_PARTY_DIR}/glw/include/glw/texture.hpp
+    ${THIRD_PARTY_DIR}/glw/include/glw/vertex_array.hpp
+    ${THIRD_PARTY_DIR}/glw/source/buffers.cpp
+    ${THIRD_PARTY_DIR}/glw/source/framebuffer.cpp
+    ${THIRD_PARTY_DIR}/glw/source/shader.cpp
+    ${THIRD_PARTY_DIR}/glw/source/texture.cpp
+    ${THIRD_PARTY_DIR}/glw/source/vertex_array.cpp
+)
+
 set(PET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/opengl/buffers.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/opengl/buffers.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/opengl/shader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/opengl/shader.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/basica.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/basicb.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/basicc.inl
@@ -21,7 +31,11 @@ set(PET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/type_aliases.hpp
 )
 
-add_executable(${PET_TARGET_NAME} ${PET_SOURCES})
+add_executable(${PET_TARGET_NAME}
+    ${GLW_SOURCES}
+    ${PET_SOURCES}
+)
+source_group(TREE ${THIRD_PARTY_DIR} PREFIX third_party FILES ${GLW_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX source FILES ${PET_SOURCES})
 
 set_target_warnings(${PET_TARGET_NAME})
@@ -29,6 +43,10 @@ set_target_warnings(${PET_TARGET_NAME})
 target_compile_options(${PET_TARGET_NAME} PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/MP /fp:fast /external:anglebrackets /external:W1>
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic>
+)
+
+target_include_directories(${PET_TARGET_NAME} PRIVATE
+    ${THIRD_PARTY_DIR}/glw/include
 )
 
 target_link_libraries(${PET_TARGET_NAME} PRIVATE

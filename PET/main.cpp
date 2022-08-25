@@ -3,11 +3,13 @@
 #include "memory_map.hpp"
 #include "cpu6502.hpp"
 
-#include "opengl/buffers.hpp"
-#include "opengl/shader.hpp"
-
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
+
+#include <glw/buffers.hpp>
+#include <glw/shader.hpp>
+#include <glw/vertex_array.hpp>
+#include <glw/error_callback.inl>
 
 #include "roms/charset.inl"
 
@@ -18,7 +20,7 @@ struct Vertex
 };
 
 Vertex vertices[8][8];
-VertexBuffer* VBO;
+glw::VertexBuffer* VBO;
 
 void updateScreen(u16 address, u8 data)
 {
@@ -26,53 +28,18 @@ void updateScreen(u16 address, u8 data)
     if (data != 32)
         __debugbreak();
 
-    for (u8 char_row = 0; char_row < 8; char_row++)
+    for (u8 row = 0; row < 8; row++)
     {
-        for (u8 pixel = 0; pixel < 8; pixel++)
+        for (u8 col = 0; col < 8; col++)
         {
-            vertices[char_row][pixel].x = address % 40;
-            vertices[char_row][pixel].y = address / 40;
-            vertices[char_row][pixel].color = (*char_data >> (7 - pixel)) == 1 ? 0xFFFFFFFF : 0x00FF00FF;
+            vertices[row][col].x = (address % 40) * 24 + col * 3;
+            vertices[row][col].y = (address / 40) * 24 + row * 3;
+            vertices[row][col].color = (char_data[row] >> (7 - col)) == 1 ? 0xFF558371 : 0xFFDBF5E9;
         }
     }
 
     VBO->setData(vertices, sizeof(vertices));
     glDrawArrays(GL_POINTS, 0, 8 * 8);
-}
-
-static void GLAPIENTRY openGlErrorHandler(
-    GLenum source,
-    GLenum type,
-    GLuint /*id*/,
-    GLenum /*severity*/,
-    GLsizei /*length*/,
-    const GLchar* message,
-    const void* /*userParam*/)
-{
-    const char* sourceStr = "";
-    switch (source) {
-    case GL_DEBUG_SOURCE_API: sourceStr = "Call to the OpenGL API"; break;
-    case GL_DEBUG_SOURCE_WINDOW_SYSTEM: sourceStr = "Call to a window-system API"; break;
-    case GL_DEBUG_SOURCE_SHADER_COMPILER: sourceStr = "Compiler for a shading language"; break;
-    case GL_DEBUG_SOURCE_THIRD_PARTY: sourceStr = "Application associated with OpenGL"; break;
-    case GL_DEBUG_SOURCE_APPLICATION: sourceStr = "User of this application"; break;
-    case GL_DEBUG_SOURCE_OTHER: sourceStr = "Unknown"; break;
-    }
-
-    const char* typeStr = "";
-    switch (type) {
-    case GL_DEBUG_TYPE_ERROR: typeStr = "Error"; break;
-    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: typeStr = "Deprecated behavior"; break;
-    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: typeStr = "Undefined behavior"; break;
-    case GL_DEBUG_TYPE_PORTABILITY: typeStr = "Portability"; break;
-    case GL_DEBUG_TYPE_PERFORMANCE: typeStr = "Performance"; break;
-    case GL_DEBUG_TYPE_MARKER: typeStr = "Command stream annotation"; break;
-    case GL_DEBUG_TYPE_PUSH_GROUP:
-    case GL_DEBUG_TYPE_POP_GROUP: typeStr = "User defined"; break;
-    case GL_DEBUG_TYPE_OTHER: typeStr = "Unknown"; break;
-    }
-
-    std::cerr << "OpenGL debug | " << sourceStr << " | Type: " << typeStr << '\n' << message;
 }
 
 int main()
@@ -87,6 +54,7 @@ int main()
 
     constexpr u32 width = 40 * 8 * 3;
     constexpr u32 height = 25 * 8 * 3;
+    glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
     GLFWwindow* window = glfwCreateWindow(width, height, "Commodore PET", nullptr, nullptr);
     if (!window) {
         std::cerr << "GLFW window creation failed!\n";
@@ -101,53 +69,41 @@ int main()
 
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-    glDebugMessageCallback(openGlErrorHandler, nullptr);
+    glDebugMessageCallback(OGLErrorCallback, nullptr);
 
-    int fbWidth, fbHeight;
-    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-    glViewport(0, 0, fbWidth, fbHeight);
+    //int fbWidth, fbHeight;
+    //glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+    //glViewport(0, 0, fbWidth, fbHeight);
     
     glPointSize(3.f);
 
-    u32 VAO;
-    glCreateVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-    VBO = new VertexBuffer{ sizeof(vertices) };
+    VBO = new glw::VertexBuffer{ sizeof(vertices) };
     VBO->bind();
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(
-        0,
-        2,
-        GL_SHORT,
-        GL_TRUE,
-        sizeof(Vertex),
-        0
-    ); // position
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(
-        1,
-        4,
-        GL_UNSIGNED_BYTE,
-        GL_TRUE,
-        sizeof(Vertex),
-        (const void*)(sizeof(u16) * 2)
-    ); // color
+    glw::VertexLayout layout({
+        { glw::LayoutElement::DataType::U16_2, false },
+        { glw::LayoutElement::DataType::U8_4, true, true }
+    });
+
+    glw::VertexArray VAO{ *VBO, layout };
+    VAO.bind();
 
     const char* vertSource =
 R"(
 #version 450 core
 
-layout(location = 0) in vec2 a_Position;
+layout(location = 0) in uvec2 a_Position;
 layout(location = 1) in vec4 a_Color;
 
 layout(location = 0) out vec4 v_Color;
 
 void main()
 {
+    float xpos = float(a_Position.x) / (40.0 * 8.0 * 3.0 * 0.5) - 1.0;
+	float ypos = float(a_Position.y) / (25.0 * 8.0 * 3.0 * 0.5) - 1.0;
+
     v_Color = a_Color;
-    gl_Position = vec4(a_Position, 0.0, 1.0);
+    gl_Position = vec4(xpos, ypos, 0.0, 1.0);
 }
 )";
 
@@ -165,17 +121,19 @@ void main()
 }
 )";
 
-    Shader shader{ vertSource, fragSource };
+    glw::Shader shader{};
+    shader.createFromSource(vertSource, fragSource);
     shader.bind();
 
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
 
-        for (size_t i = 0; i < 128; ++i)
+        for (size_t i = 0; i < 8; ++i)
             cpu.clock();
 
-        glfwSwapBuffers(window);
+        //glfwSwapBuffers(window);
+        glFinish();
     }
 
     delete VBO;

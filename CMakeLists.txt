@@ -5,4 +5,6 @@ include(scripts/cmake/base_configuration.cmake)
 include(scripts/cmake/compiler_warnings.cmake)
 
 add_subdirectory(third_party)
+
+set(THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
 add_subdirectory(PET)
