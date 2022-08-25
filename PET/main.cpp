@@ -13,6 +13,8 @@
 
 #include "roms/charset.inl"
 
+#include <thread>
+
 struct Vertex
 {
     u16 x, y;
@@ -70,10 +72,6 @@ int main()
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(OGLErrorCallback, nullptr);
-
-    //int fbWidth, fbHeight;
-    //glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-    //glViewport(0, 0, fbWidth, fbHeight);
     
     glPointSize(3.f);
 
@@ -129,11 +127,11 @@ void main()
     {
         glfwPollEvents();
 
-        for (size_t i = 0; i < 8; ++i)
+        for (size_t i = 0; i < 16; ++i)
             cpu.clock();
 
-        //glfwSwapBuffers(window);
         glFinish();
+        std::this_thread::sleep_for(std::chrono::microseconds(512));
     }
 
     delete VBO;

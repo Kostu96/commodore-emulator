@@ -56,15 +56,9 @@ u8 MemoryMap::load8(u16 address)
     if (EDITOR_RANGE.contains(address, offset))
         return editor4[offset];
     if (PIA1_RANGE.contains(address, offset))
-    {
-        std::cerr << "Unhandled load8 from PIA1\n";
-        return 0;
-    }
+        return pia1.load8(offset);
     if (PIA2_RANGE.contains(address, offset))
-    {
-        std::cerr << "Unhandled load8 from PIA2\n";
-        return 0;
-    }
+        return pia2.load8(offset);
     if (KERNAL_RANGE.contains(address, offset))
         return kernal4[offset];
 
@@ -133,17 +127,17 @@ void MemoryMap::store8(u16 address, u8 data)
     }
     if (PIA1_RANGE.contains(address, offset))
     {
-        std::cerr << "Unhandled store8 to PIA1\n";
+        pia1.store8(offset, data);
         return;
     }
     if (PIA2_RANGE.contains(address, offset))
     {
-        std::cerr << "Unhandled store8 to PIA2\n";
+        pia2.store8(offset, data);
         return;
     }
     if (VIA_RANGE.contains(address, offset))
     {
-        std::cerr << "Unhandled store8 to VIA\n";
+        via.store8(offset, data);
         return;
     }
 

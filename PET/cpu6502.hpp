@@ -17,71 +17,47 @@ private:
     u16 pop16();
 
     // Addressing Modes:
-    void am_IMM();
-    void am_ZPG();
-    void am_ZPX();
-    void am_ZPY();
-    void am_ABS();
-    void am_ABX();
-    void am_ABY();
-    void am_IND();
-    void am_INX();
-    void am_INY();
+    void am_ACC(); void am_IMM();
+    void am_ZPG(); void am_ZPX(); void am_ZPY();
+    void am_ABS(); void am_ABX(); void am_ABY();
+    void am_IND(); void am_INX(); void am_INY();
 
     // Branch Instructions:
     void op_JMP_ABS();
-    void op_BPL();
-    void op_BMI();
-    void op_BEQ();
-    void op_BNE();
-    void op_BCS();
-    void op_BCC();
-    void op_JSR();
-    void op_RTS();
+    void op_BPL(); void op_BMI();
+    void op_BEQ(); void op_BNE();
+    void op_BCS(); void op_BCC();
+    void op_JSR(); void op_RTS();
     
     // Load Instructions:
-    void op_LDA();
-    void op_LDX();
-    void op_LDY();
+    void op_LDA(); void op_LDX(); void op_LDY();
 
     // Store Instructions:
-    void op_STA();
-    void op_STX();
-    void op_STY();
+    void op_STA(); void op_STX(); void op_STY();
 
     // Transfer Instructions:
-    void op_TXA();
-    void op_TAX();
-    void op_TYA();
-    void op_TAY();
-    void op_TSX();
-    void op_TXS();
+    void op_TXA(); void op_TAX();
+    void op_TYA(); void op_TAY();
+    void op_TSX(); void op_TXS();
 
     // Stack Instructions:
-    void op_PHA();
-    void op_PLA();
+    void op_PHA(); void op_PLA();
 
     // ALU Instructions:
-    void op_ADC();
+    void op_ADC(); void op_SBC();
     void op_ORA();
     void op_AND();
-    void op_LSR_ACC();
+    void op_LSR();
     void op_ASL_ACC();
-    void op_BIT_ABS();
-    void op_INC();
-    void op_INX();
-    void op_DEC();
-    void op_DEX();
-    void op_DEY();
-    void op_CMP();
-    void op_CPX();
-    void op_CPY();
+    void op_BIT();
+    void op_INC(); void op_INX(); void op_INY();
+    void op_DEC(); void op_DEX(); void op_DEY();
+    void op_CMP(); void op_CPX(); void op_CPY();
 
     // Flags Instructions:
-    void op_SEI();
-    void op_CLI();
+    void op_SEC(); void op_CLC();
+    void op_SEI(); void op_CLI();
     void op_CLD();
-    void op_CLC();
 
     // Interrupts:
     void op_BRK();
@@ -115,4 +91,5 @@ private:
 
     // helper variables
     u16 m_absoluteAddress;
+    bool m_isACCAddressing = false;
 };
