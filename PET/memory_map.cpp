@@ -123,6 +123,7 @@ void MemoryMap::store8(u16 address, u8 data)
     if (DISPLAY_RANGE.contains(address, offset))
     {
         display[offset] = data;
+        updateScreen(offset, data);
         return;
     }
     if (DISPLAYEX_RANGE.contains(address, offset))
