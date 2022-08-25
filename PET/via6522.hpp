@@ -11,5 +11,5 @@ public:
 private:
 	u8 PB;
 	u8 DDRB;
-	u8 IER;
+	u8 IER = 0x80;
 };

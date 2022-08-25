@@ -9,9 +9,26 @@ public:
 	u8 load8(u16 offset);
 	void store8(u16 offset, u8 data);
 private:
-	u8 PA;
-	u8 DDRA;
+    union Control
+    {
+        struct Bits
+        {
+            u8 Cx1ActiveTransition : 1;
+            u8 Cx2ActiveTransition : 1;
+            u8 Cx2Direction : 1;
+            u8 Cx2Control : 2;
+            u8 PortControl : 1;
+            u8 Cx1Control : 2;
+        };
 
-	u8 PB = 0xFF;
-	u8 DDRB;
+        Bits bits;
+        u8 byte = 0;
+    };
+
+	u8 PortA;
+	u8 DataDirectionA;
+    Control ControlA{};
+	u8 PortB = 0xFF;
+	u8 DataDirectionB;
+    Control ControlB{};
 };
