@@ -15,16 +15,14 @@ public:
     void store8(u16 address, u8 data);
     void store16(u16 address, u16 data);
 private:
-    u8 stack[256]{};
+    u8 ram[4096]{};
     u8 display[1000]{};
-#include "roms/basica.inl"
-#include "roms/basicb.inl"
-#include "roms/basicc.inl"
-#include "roms/editor4.inl"
+#include "roms/basic2.inl"
+#include "roms/editor2.inl"
     PIA6520 pia1;
     PIA6520 pia2;
     VIA6522 via;
-#include "roms/kernal4.inl"
+#include "roms/kernal2.inl"
 
     UpdateScreenFunc updateScreen;
 };

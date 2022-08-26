@@ -21,18 +21,22 @@ void CPU6502::clock()
     switch (instruction)
     {
     case 0x00:           op_BRK(); break;
+    case 0x06: am_ZPG(); op_ASL(); break;
+    case 0x08:           op_PHP(); break;
     case 0x09: am_IMM(); op_ORA(); break;
-    case 0x0A: op_ASL_ACC(); break;
+    case 0x0A: am_ACC(); op_ASL(); break;
     case 0x10:           op_BPL(); break;
     case 0x18:           op_CLC(); break;
     case 0x20:           op_JSR(); break;
     case 0x24: am_ZPG(); op_BIT(); break;
+    case 0x28:           op_PLP(); break;
     case 0x29: am_IMM(); op_AND(); break;
     case 0x2C: am_ABS(); op_BIT(); break;
     case 0x30:           op_BMI(); break;
     case 0x38:           op_SEC(); break;
     case 0x46: am_ZPG(); op_LSR(); break;
     case 0x48:           op_PHA(); break;
+    case 0x49: am_IMM(); op_EOR(); break;
     case 0x4A: am_ACC(); op_LSR(); break;
     case 0x4C: op_JMP_ABS(); break;
     case 0x58:           op_CLI(); break;
@@ -414,6 +418,20 @@ void CPU6502::op_PLA()
     F.bits.Z = (ACC == 0);
     F.bits.N = (ACC >> 7);
 }
+
+void CPU6502::op_PHP()
+{
+    // takes 3 cycles
+
+    push8(F.byte);
+}
+
+void CPU6502::op_PLP()
+{
+    // takes 4 cycles
+
+    F.byte = pop8();
+}
 #pragma endregion
 
 #pragma region ALUInstructions
@@ -462,6 +480,16 @@ void CPU6502::op_AND()
     F.bits.N = (ACC >> 7);
 }
 
+void CPU6502::op_EOR()
+{
+    // takes 2 cycles
+
+    ACC ^= m_memoryMap.load8(m_absoluteAddress);
+
+    F.bits.Z = (ACC == 0);
+    F.bits.N = (ACC >> 7);
+}
+
 void CPU6502::op_LSR()
 {
     // takes 2 cycles
@@ -488,15 +516,29 @@ void CPU6502::op_LSR()
     F.bits.N = 0;
 }
 
-void CPU6502::op_ASL_ACC()
+void CPU6502::op_ASL()
 {
     // takes 2 cycles
 
-    F.bits.C = (ACC >> 7);
-    ACC <<= 1;
+    u8 data;
+    if (m_isACCAddressing)
+    {
+        F.bits.C = (ACC >> 7);
+        ACC <<= 1;
 
-    F.bits.Z = (ACC == 0);
-    F.bits.N = (ACC >> 7);
+        m_isACCAddressing = false;
+        data = ACC;
+    }
+    else
+    {
+        data = m_memoryMap.load8(m_absoluteAddress);
+        F.bits.C = (data >> 7);
+        data <<= 1;
+        m_memoryMap.store8(m_absoluteAddress, data);
+    }
+
+    F.bits.Z = (data == 0);
+    F.bits.N = (data >> 7);
 }
 
 void CPU6502::op_BIT()

@@ -27,8 +27,8 @@ glw::VertexBuffer* VBO;
 void updateScreen(u16 address, u8 data)
 {
     [[maybe_unused]] const u8* char_data = charset[data];
-    if (data != 32)
-        __debugbreak();
+    //if (data != 32)
+    //    __debugbreak();
 
     for (u8 row = 0; row < 8; row++)
     {
@@ -127,11 +127,11 @@ void main()
     {
         glfwPollEvents();
 
-        for (size_t i = 0; i < 16; ++i)
+        for (size_t i = 0; i < 64; ++i)
             cpu.clock();
 
         glFinish();
-        std::this_thread::sleep_for(std::chrono::microseconds(512));
+        //std::this_thread::sleep_for(std::chrono::microseconds(128));
     }
 
     delete VBO;

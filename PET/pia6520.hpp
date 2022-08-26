@@ -25,7 +25,7 @@ private:
         u8 byte = 0;
     };
 
-	u8 PortA;
+	u8 PortA = 0xFF;
 	u8 DataDirectionA;
     Control ControlA{};
 	u8 PortB = 0xFF;

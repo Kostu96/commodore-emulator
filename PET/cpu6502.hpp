@@ -42,13 +42,15 @@ private:
 
     // Stack Instructions:
     void op_PHA(); void op_PLA();
+    void op_PHP(); void op_PLP();
 
     // ALU Instructions:
     void op_ADC(); void op_SBC();
     void op_ORA();
     void op_AND();
+    void op_EOR();
     void op_LSR();
-    void op_ASL_ACC();
+    void op_ASL();
     void op_BIT();
     void op_INC(); void op_INX(); void op_INY();
     void op_DEC(); void op_DEX(); void op_DEY();

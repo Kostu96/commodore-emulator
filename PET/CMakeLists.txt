@@ -16,10 +16,12 @@ set(GLW_SOURCES
 
 set(PET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt
+    ${CMAKE_CURRENT_SOURCE_DIR}/roms/basic2.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/basica.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/basicb.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/basicc.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/charset.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/roms/editor2.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/editor4.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/kernal2.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/kernal4.inl
