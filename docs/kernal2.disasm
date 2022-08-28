@@ -1,0 +1,10 @@
+kernal2
+F000: ???
+.
+FCD1: A2 FF     LDX $FF
+FCD3: 9A        TXS
+FCD4: D8        CLD
+FCD5: 20 DE E1  JSR $E1DE
+.
+FFFE: 1B
+FFFF: E6

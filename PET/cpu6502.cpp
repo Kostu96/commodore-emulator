@@ -10,8 +10,9 @@ void CPU6502::reset()
     // takes 7 cycles as all interupts
 
     PC = m_memoryMap.load16(0xFFFC); // RESET vector
+    ACC = X = Y = 0;
     SP = 0xFD;
-    F.byte = 0x0004;
+    F.byte = 0x04;
 }
 
 void CPU6502::clock()
@@ -20,31 +21,41 @@ void CPU6502::clock()
     
     switch (instruction)
     {
-    case 0x00:           op_BRK(); break;
+    //case 0x00:           op_BRK(); break;
+    case 0x05: am_ZPG(); op_ORA(); break;
     case 0x06: am_ZPG(); op_ASL(); break;
     case 0x08:           op_PHP(); break;
     case 0x09: am_IMM(); op_ORA(); break;
     case 0x0A: am_ACC(); op_ASL(); break;
     case 0x10:           op_BPL(); break;
+    case 0x16: am_ZPX(); op_ASL(); break;
     case 0x18:           op_CLC(); break;
     case 0x20:           op_JSR(); break;
     case 0x24: am_ZPG(); op_BIT(); break;
+    case 0x26: am_ZPG(); op_ROL(); break;
     case 0x28:           op_PLP(); break;
     case 0x29: am_IMM(); op_AND(); break;
+    case 0x2A: am_ACC(); op_ROL(); break;
     case 0x2C: am_ABS(); op_BIT(); break;
     case 0x30:           op_BMI(); break;
     case 0x38:           op_SEC(); break;
+    case 0x45: am_ZPG(); op_EOR(); break;
     case 0x46: am_ZPG(); op_LSR(); break;
     case 0x48:           op_PHA(); break;
     case 0x49: am_IMM(); op_EOR(); break;
     case 0x4A: am_ACC(); op_LSR(); break;
     case 0x4C: op_JMP_ABS(); break;
+    case 0x56: am_ZPX(); op_LSR(); break;
     case 0x58:           op_CLI(); break;
     case 0x60:           op_RTS(); break;
     case 0x65: am_ZPG(); op_ADC(); break;
+    case 0x66: am_ZPG(); op_ROR(); break;
     case 0x68:           op_PLA(); break;
     case 0x69: am_IMM(); op_ADC(); break;
+    case 0x6A: am_ACC(); op_ROR(); break;
+    case 0x76: am_ZPX(); op_ROR(); break;
     case 0x78:           op_SEI(); break;
+    case 0x79: am_ABY(); op_ADC(); break;
     case 0x84: am_ZPG(); op_STY(); break;
     case 0x85: am_ZPG(); op_STA(); break;
     case 0x86: am_ZPG(); op_STX(); break;
@@ -73,6 +84,7 @@ void CPU6502::clock()
     case 0xB1: am_INY(); op_LDA(); break;
     case 0xB4: am_ZPX(); op_LDY(); break;
     case 0xB5: am_ZPX(); op_LDA(); break;
+    case 0xB9: am_ABY(); op_LDA(); break;
     case 0xBA:           op_TSX(); break;
     case 0xBD: am_ABX(); op_LDA(); break;
     case 0xC0: am_IMM(); op_CPY(); break;
@@ -87,6 +99,7 @@ void CPU6502::clock()
     case 0xD8:           op_CLD(); break;
     case 0xDD: am_ABX(); op_CMP(); break;
     case 0xE0: am_IMM(); op_CPX(); break;
+    case 0xE4: am_ZPG(); op_CPX(); break;
     case 0xE5: am_ZPG(); op_SBC(); break;
     case 0xE6: am_ZPG(); op_INC(); break;
     case 0xE8:           op_INX(); break;
@@ -94,7 +107,7 @@ void CPU6502::clock()
     case 0xF0:           op_BEQ(); break;
     case 0xF6: am_ZPX(); op_INC(); break;
     default:
-        std::cerr << "Unhandled instruction: " << std::hex << std::setw(2) << std::setfill('0') << (u16)instruction << '\n';
+        std::cerr << "Unhandled instruction: " << std::hex << std::setw(2) << std::setfill('0') << static_cast<u16>(instruction) << '\n';
     }
 }
 
@@ -444,7 +457,7 @@ void CPU6502::op_ADC()
     F.bits.C = (temp >> 8);
     F.bits.Z = (ACC == 0);
     F.bits.N = (ACC >> 7);
-    F.bits.V = (~((u16)ACC ^ memory) & ((u16)ACC ^ temp)) >> 7;
+    F.bits.V = (~(static_cast<u16>(ACC) ^ memory) & (static_cast<u16>(ACC) ^ temp)) >> 7;
 }
 
 void CPU6502::op_SBC()
@@ -457,7 +470,7 @@ void CPU6502::op_SBC()
     F.bits.C = (temp >> 8);
     F.bits.Z = (ACC == 0);
     F.bits.N = (ACC >> 7);
-    F.bits.V = (~((u16)ACC ^ memory) & ((u16)ACC ^ temp)) >> 7;
+    F.bits.V = (~(static_cast<u16>(ACC) ^ memory) & (static_cast<u16>(ACC) ^ temp)) >> 7;
 }
 
 void CPU6502::op_ORA()
@@ -534,6 +547,65 @@ void CPU6502::op_ASL()
         data = m_memoryMap.load8(m_absoluteAddress);
         F.bits.C = (data >> 7);
         data <<= 1;
+        m_memoryMap.store8(m_absoluteAddress, data);
+    }
+
+    F.bits.Z = (data == 0);
+    F.bits.N = (data >> 7);
+}
+
+void CPU6502::op_ROL()
+{
+    // takes 2 cycles
+
+    u8 data;
+    u8 tempCarry = F.bits.C;
+    if (m_isACCAddressing)
+    {
+        F.bits.C = (ACC >> 7);
+        ACC <<= 1;
+        ACC |= tempCarry;
+
+        m_isACCAddressing = false;
+        data = ACC;
+    }
+    else
+    {
+        data = m_memoryMap.load8(m_absoluteAddress);
+        F.bits.C = (data >> 7);
+        data <<= 1;
+        data |= tempCarry;
+        m_memoryMap.store8(m_absoluteAddress, data);
+    }
+
+    F.bits.Z = (data == 0);
+    F.bits.N = (data >> 7);
+}
+
+void CPU6502::op_ROR()
+{
+    // takes 2 cycles
+
+    u8 data;
+    u8 tempCarry = F.bits.C;
+    tempCarry <<= 7;
+    if (m_isACCAddressing)
+    {
+        F.bits.C = (ACC & 1);
+        ACC >>= 1;
+        ACC &= 0x7F;
+        ACC |= tempCarry;
+
+        m_isACCAddressing = false;
+        data = ACC;
+    }
+    else
+    {
+        data = m_memoryMap.load8(m_absoluteAddress);
+        F.bits.C = (data & 1);
+        data >>= 1;
+        data &= 0x7F;
+        data |= tempCarry;
         m_memoryMap.store8(m_absoluteAddress, data);
     }
 

@@ -32,6 +32,7 @@ set(PET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/memory_map.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/pia6520.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/pia6520.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shader_sources.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/type_aliases.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/via6522.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/via6522.hpp

@@ -1,2 +1,5 @@
 editor4
-E000: 
+E000: ???
+.
+E1DE: A9 0F     LDA $0F
+E1E0: 8D 4E E8  STA $E84E

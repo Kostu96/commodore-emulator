@@ -38,11 +38,13 @@ u8 MemoryMap::load8(u16 address)
         return pia1.load8(offset);
     if (PIA2_RANGE.contains(address, offset))
         return pia2.load8(offset);
+    if (VIA_RANGE.contains(address, offset))
+        return via.load8(offset);
     if (KERNAL_RANGE.contains(address, offset))
         return kernal2[offset];
 
     std::cerr << "Unhandled load8 at: " << std::hex << std::setw(4) << std::setfill('0') << address << '\n';
-    return 0;
+    return 0xFF;
 }
 
 u16 MemoryMap::load16(u16 address)
@@ -97,7 +99,7 @@ void MemoryMap::store8(u16 address, u8 data)
     }
 
     std::cerr << "Unhandled store8 at: " << std::hex << std::setw(4) << std::setfill('0') << address
-              << " with: " << std::hex << std::setw(2) << std::setfill('0') << (u16)data << '\n';
+              << " with: " << std::hex << std::setw(2) << std::setfill('0') << static_cast<u16>(data) << '\n';
 }
 
 void MemoryMap::store16(u16 address, u16 data)
@@ -111,5 +113,10 @@ void MemoryMap::store16(u16 address, u16 data)
     }
 
     std::cerr << "Unhandled store16 at: " << std::hex << std::setw(4) << std::setfill('0') << address
-              << " with: " << std::hex << std::setw(2) << std::setfill('0') << (u16)data << '\n';
+              << " with: " << std::hex << std::setw(2) << std::setfill('0') << data << '\n';
+}
+
+void MemoryMap::clock()
+{
+    via.clock();
 }

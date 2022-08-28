@@ -14,6 +14,8 @@ public:
     u16 load16(u16 address);
     void store8(u16 address, u8 data);
     void store16(u16 address, u16 data);
+
+    void clock();
 private:
     u8 ram[4096]{};
     u8 display[1000]{};

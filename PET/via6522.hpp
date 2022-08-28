@@ -8,8 +8,14 @@ public:
 
 	u8 load8(u16 offset);
 	void store8(u16 offset, u8 data);
+
+	void clock();
 private:
-	u8 PB;
-	u8 DDRB;
-	u8 IER = 0x80;
+	u8 PortB;
+	u8 DataDirectionB;
+	u8 Timer1H;
+	u8 PeripheralControl;
+	u8 InterruptEnable = 0x80;
+
+	u32 m_cycles = 0;
 };

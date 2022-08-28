@@ -51,6 +51,7 @@ private:
     void op_EOR();
     void op_LSR();
     void op_ASL();
+    void op_ROL(); void op_ROR();
     void op_BIT();
     void op_INC(); void op_INX(); void op_INY();
     void op_DEC(); void op_DEX(); void op_DEY();
