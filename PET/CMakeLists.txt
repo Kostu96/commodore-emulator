@@ -4,6 +4,7 @@ set(GLW_SOURCES
     ${THIRD_PARTY_DIR}/glw/include/glw/buffers.hpp
     ${THIRD_PARTY_DIR}/glw/include/glw/error_callback.inl
     ${THIRD_PARTY_DIR}/glw/include/glw/framebuffer.hpp
+    ${THIRD_PARTY_DIR}/glw/include/glw/glw.hpp
     ${THIRD_PARTY_DIR}/glw/include/glw/shader.hpp
     ${THIRD_PARTY_DIR}/glw/include/glw/texture.hpp
     ${THIRD_PARTY_DIR}/glw/include/glw/vertex_array.hpp

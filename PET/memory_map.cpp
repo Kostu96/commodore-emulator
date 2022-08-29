@@ -77,11 +77,7 @@ void MemoryMap::store8(u16 address, u8 data)
         updateScreen(offset, data);
         return;
     }
-    if (DISPLAYEX_RANGE.contains(address, offset))
-    {
-        std::cerr << "Unhandled store8 to DISPLAYEX\n";
-        return;
-    }
+    if (DISPLAYEX_RANGE.contains(address, offset)) return;
     if (PIA1_RANGE.contains(address, offset))
     {
         pia1.store8(offset, data);
