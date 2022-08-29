@@ -79,8 +79,10 @@ void shutdown()
     delete pointShader;
 }
 
-void updateScreen(u16 address, u8 data)
+void updateScreen(u16 offset, u8 data)
 {
+    if (offset >= 1000) return;
+
     [[maybe_unused]] const u8* char_data = charset[data];
     //if (data != 32)
         //__debugbreak();
@@ -90,8 +92,8 @@ void updateScreen(u16 address, u8 data)
     {
         for (u8 col = 0; col < 8; col++)
         {
-            charVertices[row][col].x = (address % 40) * 8 + col;
-            charVertices[row][col].y = (address / 40) * 8 + row;
+            charVertices[row][col].x = (offset % 40) * 8 + col;
+            charVertices[row][col].y = (offset / 40) * 8 + row;
             u8 bit = (0x80 >> col);
             charVertices[row][col].color = (char_data[row] & bit) ? 0xFF558371 : 0xFFDBF5E9;
         }
@@ -155,7 +157,7 @@ int main()
     {
         glfwPollEvents();
 
-        for (size_t i = 0; i < 64; ++i)
+        for (size_t i = 0; i < 128; ++i)
             cpu.clock();
 
         FBO->unbind();

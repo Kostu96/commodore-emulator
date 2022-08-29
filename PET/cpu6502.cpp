@@ -5,6 +5,14 @@
 #include <iostream>
 #include <iomanip>
 
+CPU6502::CPU6502(MemoryMap& memoryMap) :
+    m_memoryMap{ memoryMap }
+{
+    memoryMap.setCPU(*this);
+    
+    reset();
+}
+
 void CPU6502::reset()
 {
     // takes 7 cycles as all interupts
@@ -12,11 +20,14 @@ void CPU6502::reset()
     PC = m_memoryMap.load16(0xFFFC); // RESET vector
     ACC = X = Y = 0;
     SP = 0xFD;
-    F.byte = 0x04;
+    F.bits.unused = 1;
+    F.bits.I = 1;
 }
 
 void CPU6502::clock()
 {
+    m_memoryMap.clock();
+
     u8 instruction = m_memoryMap.load8(PC++);
     
     switch (instruction)
@@ -30,7 +41,7 @@ void CPU6502::clock()
     case 0x10:           op_BPL(); break;
     case 0x16: am_ZPX(); op_ASL(); break;
     case 0x18:           op_CLC(); break;
-    case 0x20:           op_JSR(); break;
+    case 0x20: am_ABS(); op_JSR(); break;
     case 0x24: am_ZPG(); op_BIT(); break;
     case 0x26: am_ZPG(); op_ROL(); break;
     case 0x28:           op_PLP(); break;
@@ -39,12 +50,13 @@ void CPU6502::clock()
     case 0x2C: am_ABS(); op_BIT(); break;
     case 0x30:           op_BMI(); break;
     case 0x38:           op_SEC(); break;
+    case 0x40:           op_RTI(); break;
     case 0x45: am_ZPG(); op_EOR(); break;
     case 0x46: am_ZPG(); op_LSR(); break;
     case 0x48:           op_PHA(); break;
     case 0x49: am_IMM(); op_EOR(); break;
     case 0x4A: am_ACC(); op_LSR(); break;
-    case 0x4C: op_JMP_ABS(); break;
+    case 0x4C: am_ABS(); op_JMP(); break;
     case 0x56: am_ZPX(); op_LSR(); break;
     case 0x58:           op_CLI(); break;
     case 0x60:           op_RTS(); break;
@@ -53,6 +65,7 @@ void CPU6502::clock()
     case 0x68:           op_PLA(); break;
     case 0x69: am_IMM(); op_ADC(); break;
     case 0x6A: am_ACC(); op_ROR(); break;
+    case 0x6C: am_IND(); op_JMP(); break;
     case 0x76: am_ZPX(); op_ROR(); break;
     case 0x78:           op_SEI(); break;
     case 0x79: am_ABY(); op_ADC(); break;
@@ -79,6 +92,7 @@ void CPU6502::clock()
     case 0xA8:           op_TAY(); break;
     case 0xA9: am_IMM(); op_LDA(); break;
     case 0xAA:           op_TAX(); break;
+    case 0xAC: am_ABS(); op_LDY(); break;
     case 0xAD: am_ABS(); op_LDA(); break;
     case 0xB0:           op_BCS(); break;
     case 0xB1: am_INY(); op_LDA(); break;
@@ -93,6 +107,7 @@ void CPU6502::clock()
     case 0xC6: am_ZPG(); op_DEC(); break;
     case 0xC8:           op_INY(); break;
     case 0xCA:           op_DEX(); break;
+    case 0xCD: am_ABS(); op_CMP(); break;
     case 0xC9: am_IMM(); op_CMP(); break;
     case 0xD0:           op_BNE(); break;
     case 0xD1: am_INY(); op_CMP(); break;
@@ -104,11 +119,39 @@ void CPU6502::clock()
     case 0xE6: am_ZPG(); op_INC(); break;
     case 0xE8:           op_INX(); break;
     case 0xE9: am_IMM(); op_SBC(); break;
+    case 0xEE: am_ABS(); op_INC(); break;
     case 0xF0:           op_BEQ(); break;
     case 0xF6: am_ZPX(); op_INC(); break;
     default:
         std::cerr << "Unhandled instruction: " << std::hex << std::setw(2) << std::setfill('0') << static_cast<u16>(instruction) << '\n';
     }
+}
+
+void CPU6502::IRQ()
+{
+    if (F.bits.I == 0)
+    {
+        push16(PC);
+
+        F.bits.B = 0;
+        F.bits.unused = 1;
+        F.bits.I = 1;
+        push8(F.byte);
+
+        PC = m_memoryMap.load16(0xFFFE); // IRQ vector
+    }
+}
+
+void CPU6502::NMI()
+{
+    push16(PC);
+
+    F.bits.B = 0;
+    F.bits.unused = 1;
+    F.bits.I = 1;
+    push8(F.byte);
+
+    PC = m_memoryMap.load16(0xFFFA); // NMI vector
 }
 
 void CPU6502::push8(u8 data)
@@ -224,11 +267,11 @@ void CPU6502::am_INY()
 #pragma endregion
 
 #pragma region BranchInstructions
-void CPU6502::op_JMP_ABS()
+void CPU6502::op_JMP()
 {
     // takes 3 cycles
 
-    PC = m_memoryMap.load16(PC);
+    PC = m_absoluteAddress;
 }
 
 void CPU6502::op_BPL()
@@ -289,10 +332,8 @@ void CPU6502::op_JSR()
 {
     // takes 6 cycles
 
-    u16 addr = m_memoryMap.load16(PC);
-    PC++; // Return address is incremented on RTS
-    push16(PC);
-    PC = addr;
+    push16(PC - 1);
+    PC = m_absoluteAddress;
 }
 
 void CPU6502::op_RTS()
@@ -767,5 +808,14 @@ void CPU6502::op_BRK()
     F.bits.I = 1; // ?
     push8(F.byte);
     PC = m_memoryMap.load16(0xFFFE); // IRQ vector
+}
+
+void CPU6502::op_RTI()
+{
+    // takes 6 cycle
+
+    F.byte = 0;
+    F.byte = pop8() & 0xCF;
+    PC = pop16();
 }
 #pragma endregion

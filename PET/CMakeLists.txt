@@ -18,9 +18,7 @@ set(GLW_SOURCES
 set(PET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/basic2.inl
-    ${CMAKE_CURRENT_SOURCE_DIR}/roms/basica.inl
-    ${CMAKE_CURRENT_SOURCE_DIR}/roms/basicb.inl
-    ${CMAKE_CURRENT_SOURCE_DIR}/roms/basicc.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/roms/basic4.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/charset.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/editor2.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/editor4.inl
@@ -28,15 +26,13 @@ set(PET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/kernal4.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/cpu6502.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cpu6502.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/io.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/io.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/memory_map.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/memory_map.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/pia6520.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/pia6520.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shader_sources.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/type_aliases.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/via6522.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/via6522.hpp
 )
 
 add_executable(${PET_TARGET_NAME}

@@ -6,10 +6,12 @@ class MemoryMap;
 class CPU6502
 {
 public:
-    explicit CPU6502(MemoryMap& memoryMap) : m_memoryMap{ memoryMap } { reset(); }
+    explicit CPU6502(MemoryMap& memoryMap);
 
     void reset();
     void clock();
+    void IRQ();
+    void NMI();
 private:
     void push8(u8 data);
     void push16(u16 data);
@@ -23,7 +25,7 @@ private:
     void am_IND(); void am_INX(); void am_INY();
 
     // Branch Instructions:
-    void op_JMP_ABS();
+    void op_JMP();
     void op_BPL(); void op_BMI();
     void op_BEQ(); void op_BNE();
     void op_BCS(); void op_BCC();
@@ -64,6 +66,7 @@ private:
 
     // Interrupts:
     void op_BRK();
+    void op_RTI();
 
     MemoryMap& m_memoryMap;
 
