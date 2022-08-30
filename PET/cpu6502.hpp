@@ -10,14 +10,14 @@ public:
     {
         struct Bits
         {
-            u8 N : 1;
-            u8 V : 1;
-            u8 unused : 1;
-            u8 B : 1;
-            u8 D : 1;
-            u8 I : 1;
-            u8 Z : 1;
-            u8 C : 1;
+            u8 C : 1;      // 0
+            u8 Z : 1;      // 1
+            u8 I : 1;      // 2
+            u8 D : 1;      // 3
+            u8 B : 1;      // 4
+            u8 unused : 1; // 5
+            u8 V : 1;      // 6
+            u8 N : 1;      // 7
         };
 
         Bits bits;
@@ -32,6 +32,8 @@ public:
     void clock();
     void IRQ();
     void NMI();
+
+    CPU6502(const CPU6502&) = delete;
 private:
     void push8(u8 data);
     void push16(u16 data);
@@ -51,6 +53,7 @@ private:
     void op_BPL(); void op_BMI();
     void op_BEQ(); void op_BNE();
     void op_BCS(); void op_BCC();
+    void op_BVS(); void op_BVC();
     void op_JSR(); void op_RTS();
     
     // Load Instructions:
@@ -84,7 +87,8 @@ private:
     // Flags Instructions:
     void op_SEC(); void op_CLC();
     void op_SEI(); void op_CLI();
-    void op_CLD();
+    void op_SED(); void op_CLD();
+    void op_CLV();
 
     // Interrupts:
     void op_BRK();

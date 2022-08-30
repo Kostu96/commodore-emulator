@@ -42,8 +42,8 @@ set_target_properties(${PET_TARGET_NAME} PROPERTIES
     VS_DEBUGGER_WORKING_DIRECTORY $<TARGET_FILE_DIR:${PET_TARGET_NAME}>
 )
 
-#add_custom_command(
-#    TARGET ${PET_TARGET_NAME}
-#    POST_BUILD
-#    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:${PET_TARGET_NAME}>/assets
-#)
+add_custom_command(
+    TARGET ${PET_TARGET_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/assets $<TARGET_FILE_DIR:${PET_TARGET_NAME}>/assets
+)

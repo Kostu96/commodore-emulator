@@ -48,7 +48,7 @@ void init()
 {
     glActiveTexture(GL_TEXTURE0);
 
-    keyboardTexture = new glw::Texture{ "PET_Keyboard.png", true };
+    keyboardTexture = new glw::Texture{ "assets/PET_Keyboard.png", true };
 
     pointShader = new glw::Shader{};
     pointShader->createFromSource(pointVertSource, pointFragSource);
