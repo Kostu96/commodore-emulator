@@ -2,16 +2,14 @@
 #include "type_aliases.hpp"
 #include "io.hpp"
 
-#define ROM4 0
-
-typedef void(*UpdateScreenFunc)(u16, u8);
+#define SERIES1
 
 class MemoryMap
 {
 public:
-    MemoryMap(UpdateScreenFunc func) : updateScreen{ func } {}
+    MemoryMap() = default;
 
-    void setCPU(CPU6502& cpu) { io.setCPU(cpu); }
+    void init(CPU6502& cpu, UpdateScreenFunc func) { io.init(cpu, func, vram); }
 
     u8 load8(u16 address);
     u16 load16(u16 address);
@@ -20,19 +18,23 @@ public:
 
     void clock();
 private:
-    u8 ram[0x1000]{};
+    u8 ram[0x2000]{};
     u8 vram[0x400]{};
     IO io;
 
-#if ROM4
-#include "roms/basic4.inl"
-#include "roms/editor4.inl"
-#include "roms/kernal4.inl"
-#else
-#include "roms/basic2.inl"
-#include "roms/editor2.inl"
-#include "roms/kernal2.inl"
+#if defined(SERIES1)
+#include "roms/basic1_C000.inl"
+#include "roms/editor1_E000.inl"
+#include "roms/kernal1_F000.inl"
 #endif
-
-    UpdateScreenFunc updateScreen;
+#if defined(SERIES2)
+#include "roms/basic2_C000.inl"
+#include "roms/editor2_E000.inl"
+#include "roms/kernal2_F000.inl"
+#endif
+#if defined(SERIES4)
+#include "roms/basic4_B000.inl"
+#include "roms/editor4_E000.inl"
+#include "roms/kernal4_F000.inl"
+#endif
 };

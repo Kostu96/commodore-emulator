@@ -5,20 +5,28 @@
 #include <iostream>
 #include <iomanip>
 
-void IO::setCPU(CPU6502& cpu)
+constexpr u16 SYSTEM_TICKS = 50; // temp, should be 20
+constexpr u16 CLOCK_FREQ = 1000;
+
+void IO::init(CPU6502& cpu, UpdateScreenFunc func, u8* vram)
 {
     m_cpu = &cpu;
+    updateScreen = func;
+    VRAM = vram;
 }
 
 u8 IO::load8(u16 offset)
 {
     switch (offset)
     {
-    case 0x10: return PIA1PortA;
-    case 0x12: return PIA1PortB;
+    case 0x10: return 0x8F;
+    case 0x11: return 0;
+    case 0x12: return 0x0F;
     case 0x20: return PIA2PortA;
     case 0x22: return PIA2PortB;
-    case 0x40: return VIAPortB;
+    case 0x40:
+        VIAInterruptFlags &= ~(0x18);
+        return VIAPortB;
     }
 
     std::cerr << "Unhandled load8 at IO: " << std::hex << std::setw(2) << std::setfill('0') << offset << '\n';
@@ -65,14 +73,36 @@ void IO::store8(u16 offset, u8 data)
     case 0x23:
         PIA2ControlB.byte = data;
         return;
-    case 0x40: VIAPortB = data; return;
-    case 0x42: VIADataDirectionB = data; return;
-    case 0x45: VIATimer1H = data; return;
-    case 0x4C: VIAPeripheralControl = data; return;
+    case 0x40:
+        VIAPortB = data & VIADataDirectionB;
+        VIAInterruptFlags &= ~0x18;
+        return;
+    case 0x41:
+        VIAPortA = data & VIADataDirectionA;
+        VIAInterruptFlags &= ~0x03;
+        return;
+    case 0x42:
+        VIADataDirectionB = data;
+        return;
+    case 0x43:
+        VIADataDirectionA = data;
+        return;
+    case 0x45:
+        VIATimer1 = VIATimer1Latch;
+        VIAInterruptFlags &= ~0x40;
+        timer1 = true;
+        return;
+    case 0x4C:
+        VIAPeripheralControl = data;
+        return;
+    case 0x4D:
+        VIAInterruptFlags &= ~data;
+        return;
     case 0x4E: {
-        VIAInterruptEnable = data;
-        if (VIAInterruptEnable)
-            VIAInterruptEnable |= 0x80;
+        if (data & 0x80)
+            VIAInterruptEnable |= data & 0x7f;
+        else
+            VIAInterruptEnable &= ~(data & 0x7f);
     } return;
     }
 
@@ -82,12 +112,28 @@ void IO::store8(u16 offset, u8 data)
 
 void IO::clock()
 {
-    if (m_cycles++ == 50)
+    if (m_cycles++ == SYSTEM_TICKS)
     {
         m_cycles = 0;
         VIAPortB |= 0x20;
+        if (!m_cpu->getFlags().bits.I)
+            updateScreen(VRAM);
         m_cpu->IRQ();
     }
     else
         VIAPortB &= ~0x20;
+
+    if (timer1)
+    {
+        VIATimer1--;
+
+        if (VIATimer1 == 0xFFFF)
+        {
+            VIATimer1 = 0;
+            timer1 = false;
+            VIAInterruptFlags |= 0x40;
+            if ((VIAInterruptEnable & 0x80) && (VIAInterruptEnable & 0x40))
+                m_cpu->IRQ();
+        }
+    }
 }

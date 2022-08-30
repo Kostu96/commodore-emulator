@@ -6,7 +6,27 @@ class MemoryMap;
 class CPU6502
 {
 public:
+    union Flags
+    {
+        struct Bits
+        {
+            u8 N : 1;
+            u8 V : 1;
+            u8 unused : 1;
+            u8 B : 1;
+            u8 D : 1;
+            u8 I : 1;
+            u8 Z : 1;
+            u8 C : 1;
+        };
+
+        Bits bits;
+        u8 byte;
+    };
+
     explicit CPU6502(MemoryMap& memoryMap);
+
+    Flags getFlags() const { return F; }
 
     void reset();
     void clock();
@@ -23,6 +43,8 @@ private:
     void am_ZPG(); void am_ZPX(); void am_ZPY();
     void am_ABS(); void am_ABX(); void am_ABY();
     void am_IND(); void am_INX(); void am_INY();
+
+    void op_NOP();
 
     // Branch Instructions:
     void op_JMP();
@@ -69,24 +91,6 @@ private:
     void op_RTI();
 
     MemoryMap& m_memoryMap;
-
-    union Flags
-    {
-        struct Bits
-        {
-            u8 N : 1;
-            u8 V : 1;
-            u8 unused : 1;
-            u8 B : 1;
-            u8 D : 1;
-            u8 I : 1;
-            u8 Z : 1;
-            u8 C : 1;
-        };
-
-        Bits bits;
-        u8 byte;
-    };
 
     u16 PC;
     u8 ACC;

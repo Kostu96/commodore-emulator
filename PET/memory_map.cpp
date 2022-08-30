@@ -15,10 +15,10 @@ struct AddressRange
     }
 };
 
-static const AddressRange RAM_RANGE{    0x0000, 0x1000 };
+static const AddressRange RAM_RANGE{    0x0000, 0x2000 };
 static const AddressRange VRAM_RANGE{   0x8000, 0x0400 };
 
-#if ROM4
+#if defined(SERIES4)
 static const AddressRange BASIC_RANGE{  0xB000, 0x3000 };
 #else
 static const AddressRange BASIC_RANGE{  0xC000, 0x2000 };
@@ -76,7 +76,6 @@ void MemoryMap::store8(u16 address, u8 data)
     if (VRAM_RANGE.contains(address, offset))
     {
         vram[offset] = data;
-        updateScreen(offset, data);
         return;
     }
     if (IO_RANGE.contains(address, offset))

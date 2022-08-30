@@ -8,19 +8,21 @@
 #include <GLFW/glfw3.h>
 
 #include <glw/glw.hpp>
-#include <glw/error_callback.inl>
 
 #include "roms/charset.inl"
 
-#include <thread>
+constexpr u16 PET_SCREEN_COLS = 40;
+constexpr u16 PET_SCREEN_ROWS = 25;
+constexpr u16 PET_SCREEN_WIDTH = PET_SCREEN_COLS * 8;
+constexpr u16 PET_SCREEN_HEIGHT = PET_SCREEN_ROWS * 8;
 
-#include <signal.h>
+glw::Texture* keyboardTexture = nullptr;
 
 glw::Shader* pointShader = nullptr;
 struct CharVertex {
     u16 x, y;
     u32 color;
-} charVertices[8][8];
+} charVertices[1000][8][8];
 glw::VertexBuffer* charVBO = nullptr;
 glw::VertexArray* charVAO = nullptr;
 
@@ -30,7 +32,7 @@ struct TextureVertex {
     f32 u, v;
 } textureVertices[] = {
     -1.f, -1.f, 0.f, 0.f,
-     1.f, -1.f, 1.f, 0.f,
+     1.f, -1.0f, 1.f, 0.f,
      1.f,  1.f, 1.f, 1.f,
     -1.f,  1.f, 0.f, 1.f
 };
@@ -44,6 +46,10 @@ glw::VertexArray* textureVAO = nullptr;
 
 void init()
 {
+    glActiveTexture(GL_TEXTURE0);
+
+    keyboardTexture = new glw::Texture{ "PET_Keyboard.png", true };
+
     pointShader = new glw::Shader{};
     pointShader->createFromSource(pointVertSource, pointFragSource);
     textureShader = new glw::Shader{};
@@ -64,6 +70,15 @@ void init()
     }};
     textureVAO = new glw::VertexArray{ *textureVBO, texturelayout };
     textureVAO->setIndexBuffer(*textureIBO);
+
+    for (u16 offset = 0; offset < 1000; offset++)
+        for (u8 row = 0; row < 8; row++)
+            for (u8 col = 0; col < 8; col++)
+            {
+                charVertices[offset][row][col].x = (offset % PET_SCREEN_COLS) * 8 + col;
+                charVertices[offset][row][col].y = (offset / PET_SCREEN_COLS) * 8 + row;
+                charVertices[offset][row][col].color = 0xFFDBF5E9;
+            }
 }
 
 void shutdown()
@@ -77,48 +92,42 @@ void shutdown()
 
     delete textureShader;
     delete pointShader;
+
+    delete keyboardTexture;
 }
 
-void updateScreen(u16 offset, u8 data)
+void updateScreen(u8* vram)
 {
-    if (offset >= 1000) return;
-
-    [[maybe_unused]] const u8* char_data = charset[data];
-    //if (data != 32)
-        //__debugbreak();
-        //raise(SIGTRAP);
-
-    for (u8 row = 0; row < 8; row++)
+    for (u16 offset = 0; offset < 1000; offset++)
     {
-        for (u8 col = 0; col < 8; col++)
-        {
-            charVertices[row][col].x = (offset % 40) * 8 + col;
-            charVertices[row][col].y = (offset / 40) * 8 + row;
-            u8 bit = (0x80 >> col);
-            charVertices[row][col].color = (char_data[row] & bit) ? 0xFF558371 : 0xFFDBF5E9;
-        }
+        u8 character = vram[offset];
+        const u8* char_data = charset[character];
+        for (u8 row = 0; row < 8; row++)
+            for (u8 col = 0; col < 8; col++)
+            {
+                u8 bit = (0x80 >> col);
+                charVertices[offset][row][col].color = (char_data[row] & bit) ? 0xFF558371 : 0xFFDBF5E9;
+            }
     }
-
     charVBO->bind();
     charVBO->setData(charVertices, sizeof(charVertices));
-    
-    charVAO->bind();
-    pointShader->bind();
-    glDrawArrays(GL_POINTS, 0, 8 * 8);
+
+    glDrawArrays(GL_POINTS, 0, 1000 * 8 * 8);
 }
 
 int main()
 {
-    MemoryMap memoryMap{ updateScreen };
+    MemoryMap memoryMap{};
     CPU6502 cpu{ memoryMap };
+    memoryMap.init(cpu, updateScreen);
 
     if (!glfwInit()) {
         std::cerr << "GLFW init failed!\n";
         std::terminate();
     }
 
-    constexpr u32 width = 40 * 8 * 2 + 10;
-    constexpr u32 height = 25 * 8 * 2 + 10;
+    constexpr u32 width = std::max(881, PET_SCREEN_WIDTH * 2);
+    constexpr u32 height = 294 + PET_SCREEN_HEIGHT * 2 + 16;
     glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
     GLFWwindow* window = glfwCreateWindow(width, height, "Commodore PET", nullptr, nullptr);
     if (!window) {
@@ -127,19 +136,12 @@ int main()
     }
 
     glfwMakeContextCurrent(window);
-    if (!gladLoadGL(glfwGetProcAddress)) {
-        std::cerr << "GLAD loader failed!\n";
-        std::terminate();
-    }
-
-    glEnable(GL_DEBUG_OUTPUT);
-    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-    glDebugMessageCallback(OGLErrorCallback, nullptr);
+    glw::init(glfwGetProcAddress);
 
     init();
 
     glw::Framebuffer* FBO = new glw::Framebuffer{
-        glw::Framebuffer::Properties{ 40 * 8, 25 * 8, 1, {
+        glw::Framebuffer::Properties{ PET_SCREEN_WIDTH, PET_SCREEN_HEIGHT, 1, {
             glw::TextureSpecification{
                 glw::TextureFormat::RGBA8,
                 glw::TextureFilter::Nearest,
@@ -149,26 +151,30 @@ int main()
         }}
     };
     FBO->bind();
-    glViewport(0, 0, 40 * 8, 25 * 8);
-    glActiveTexture(GL_TEXTURE0);
-    FBO->getAttachments()[0].bind(0);
+    
 
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
 
-        for (size_t i = 0; i < 128; ++i)
+        for (size_t i = 0; i < 512; ++i)
             cpu.clock();
 
         FBO->unbind();
-        glViewport(5, 5, 40 * 8 * 2, 25 * 8 * 2);
         textureVAO->bind();
         textureShader->bind();
+        glViewport((881 - PET_SCREEN_WIDTH * 2) / 2, 294 + 8, 40 * 8 * 2, 25 * 8 * 2);
+        FBO->getAttachments()[0].bind(0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, nullptr);
+        glViewport(0, 0, 881, 294);
+        keyboardTexture->bind(0);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, nullptr);
         glFinish();
+
         FBO->bind();
+        charVAO->bind();
+        pointShader->bind();
         glViewport(0, 0, 40 * 8, 25 * 8);
-        //std::this_thread::sleep_for(std::chrono::microseconds(128));
     }
 
     delete FBO;

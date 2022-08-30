@@ -1,8 +1,3 @@
-add_subdirectory(glad)
-target_compile_options(glad PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:${COMPILER_FLAGS}>
-)
-
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -12,9 +7,14 @@ target_compile_options(glfw PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:${COMPILER_FLAGS}>
 )
 
+add_subdirectory(glw)
+target_compile_options(glw PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:${COMPILER_FLAGS}>
+)
+
 set_target_properties(
-    glad
     glfw
+    glw
     update_mappings
     PROPERTIES
     FOLDER third_party

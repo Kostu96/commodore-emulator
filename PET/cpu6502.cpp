@@ -7,9 +7,7 @@
 
 CPU6502::CPU6502(MemoryMap& memoryMap) :
     m_memoryMap{ memoryMap }
-{
-    memoryMap.setCPU(*this);
-    
+{   
     reset();
 }
 
@@ -57,6 +55,7 @@ void CPU6502::clock()
     case 0x49: am_IMM(); op_EOR(); break;
     case 0x4A: am_ACC(); op_LSR(); break;
     case 0x4C: am_ABS(); op_JMP(); break;
+    case 0x4E: am_ABS(); op_LSR(); break;
     case 0x56: am_ZPX(); op_LSR(); break;
     case 0x58:           op_CLI(); break;
     case 0x60:           op_RTS(); break;
@@ -74,6 +73,7 @@ void CPU6502::clock()
     case 0x86: am_ZPG(); op_STX(); break;
     case 0x88:           op_DEY(); break;
     case 0x8A:           op_TXA(); break;
+    case 0x8C: am_ABS(); op_STY(); break;
     case 0x8D: am_ABS(); op_STA(); break;
     case 0x8E: am_ABS(); op_STX(); break;
     case 0x90:           op_BCC(); break;
@@ -94,6 +94,7 @@ void CPU6502::clock()
     case 0xAA:           op_TAX(); break;
     case 0xAC: am_ABS(); op_LDY(); break;
     case 0xAD: am_ABS(); op_LDA(); break;
+    case 0xAE: am_ABS(); op_LDX(); break;
     case 0xB0:           op_BCS(); break;
     case 0xB1: am_INY(); op_LDA(); break;
     case 0xB4: am_ZPX(); op_LDY(); break;
@@ -109,6 +110,7 @@ void CPU6502::clock()
     case 0xCA:           op_DEX(); break;
     case 0xCD: am_ABS(); op_CMP(); break;
     case 0xC9: am_IMM(); op_CMP(); break;
+    case 0xCE: am_ABS(); op_DEC(); break;
     case 0xD0:           op_BNE(); break;
     case 0xD1: am_INY(); op_CMP(); break;
     case 0xD8:           op_CLD(); break;
@@ -119,9 +121,12 @@ void CPU6502::clock()
     case 0xE6: am_ZPG(); op_INC(); break;
     case 0xE8:           op_INX(); break;
     case 0xE9: am_IMM(); op_SBC(); break;
+    case 0xEA:           op_NOP(); break;
+    case 0xEC: am_ABS(); op_CPX(); break;
     case 0xEE: am_ABS(); op_INC(); break;
     case 0xF0:           op_BEQ(); break;
     case 0xF6: am_ZPX(); op_INC(); break;
+    case 0xFE: am_ABX(); op_INC(); break;
     default:
         std::cerr << "Unhandled instruction: " << std::hex << std::setw(2) << std::setfill('0') << static_cast<u16>(instruction) << '\n';
     }
@@ -265,6 +270,11 @@ void CPU6502::am_INY()
     m_absoluteAddress = m_memoryMap.load16(ptr) + Y;
 }
 #pragma endregion
+
+void CPU6502::op_NOP()
+{
+    // takes 2 cycles
+}
 
 #pragma region BranchInstructions
 void CPU6502::op_JMP()

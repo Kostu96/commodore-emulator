@@ -1,29 +1,17 @@
 set(PET_TARGET_NAME pet)
 
-set(GLW_SOURCES
-    ${THIRD_PARTY_DIR}/glw/include/glw/buffers.hpp
-    ${THIRD_PARTY_DIR}/glw/include/glw/error_callback.inl
-    ${THIRD_PARTY_DIR}/glw/include/glw/framebuffer.hpp
-    ${THIRD_PARTY_DIR}/glw/include/glw/glw.hpp
-    ${THIRD_PARTY_DIR}/glw/include/glw/shader.hpp
-    ${THIRD_PARTY_DIR}/glw/include/glw/texture.hpp
-    ${THIRD_PARTY_DIR}/glw/include/glw/vertex_array.hpp
-    ${THIRD_PARTY_DIR}/glw/source/buffers.cpp
-    ${THIRD_PARTY_DIR}/glw/source/framebuffer.cpp
-    ${THIRD_PARTY_DIR}/glw/source/shader.cpp
-    ${THIRD_PARTY_DIR}/glw/source/texture.cpp
-    ${THIRD_PARTY_DIR}/glw/source/vertex_array.cpp
-)
-
 set(PET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/roms/basic2.inl
-    ${CMAKE_CURRENT_SOURCE_DIR}/roms/basic4.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/roms/basic1_C000.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/roms/basic2_C000.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/roms/basic4_B000.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/charset.inl
-    ${CMAKE_CURRENT_SOURCE_DIR}/roms/editor2.inl
-    ${CMAKE_CURRENT_SOURCE_DIR}/roms/editor4.inl
-    ${CMAKE_CURRENT_SOURCE_DIR}/roms/kernal2.inl
-    ${CMAKE_CURRENT_SOURCE_DIR}/roms/kernal4.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/roms/editor1_E000.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/roms/editor2_E000.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/roms/editor4_E000.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/roms/kernal1_F000.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/roms/kernal2_F000.inl
+    ${CMAKE_CURRENT_SOURCE_DIR}/roms/kernal4_F000.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/cpu6502.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cpu6502.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/io.cpp
@@ -35,11 +23,7 @@ set(PET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/type_aliases.hpp
 )
 
-add_executable(${PET_TARGET_NAME}
-    ${GLW_SOURCES}
-    ${PET_SOURCES}
-)
-source_group(TREE ${THIRD_PARTY_DIR} PREFIX third_party FILES ${GLW_SOURCES})
+add_executable(${PET_TARGET_NAME} ${PET_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX source FILES ${PET_SOURCES})
 
 set_target_warnings(${PET_TARGET_NAME})
@@ -49,13 +33,9 @@ target_compile_options(${PET_TARGET_NAME} PRIVATE
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic>
 )
 
-target_include_directories(${PET_TARGET_NAME} PRIVATE
-    ${THIRD_PARTY_DIR}/glw/include
-)
-
 target_link_libraries(${PET_TARGET_NAME} PRIVATE
-    glad
     glfw
+    glw
 )
 
 set_target_properties(${PET_TARGET_NAME} PROPERTIES
