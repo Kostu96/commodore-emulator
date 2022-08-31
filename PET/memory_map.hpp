@@ -27,7 +27,7 @@ public:
     MemoryMap() = default;
 #endif
 
-    void init(CPU6502& cpu, UpdateScreenFunc func) { io.init(cpu, func, vram); }
+    void init(CPU6502& cpu, UpdateScreenFunc func) { m_io.init(cpu, func, vram); }
 
 #if TEST
     u8 load8(u16 address) { return memory[address]; }
@@ -42,13 +42,15 @@ public:
 #endif
 
     void clock();
+
+    IO& getIO() { return m_io; }
 private:
 #if TEST
     u8 memory[0x10000];
 #endif
     u8 ram[0x2000]{};
     u8 vram[0x400]{};
-    IO io;
+    IO m_io;
 
 #if defined(SERIES1)
 #include "roms/basic1_C000.inl"

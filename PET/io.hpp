@@ -17,6 +17,8 @@ public:
     void store8(u16 offset, u8 data);
 
     void clock();
+
+    Keyboard& getKeyboard() { return m_keyboard; }
 private:
     union Control
     {

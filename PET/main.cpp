@@ -134,6 +134,7 @@ int main()
         std::cerr << "GLFW window creation failed!\n";
         std::terminate();
     }
+    glfwSetWindowUserPointer(window, &memoryMap.getIO().getKeyboard());
     glfwSetKeyCallback(window, Keyboard::glfwKeyCallback);
 
     glfwMakeContextCurrent(window);

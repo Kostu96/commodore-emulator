@@ -41,7 +41,7 @@ u8 MemoryMap::load8(u16 address)
     if (EDITOR_RANGE.contains(address, offset))
         return editor[offset];
     if (IO_RANGE.contains(address, offset))
-        return io.load8(offset);
+        return m_io.load8(offset);
     if (KERNAL_RANGE.contains(address, offset))
         return kernal[offset];
 
@@ -81,7 +81,7 @@ void MemoryMap::store8(u16 address, u8 data)
     }
     if (IO_RANGE.contains(address, offset))
     {
-        io.store8(offset, data);
+        m_io.store8(offset, data);
         return;
     }
 
@@ -106,5 +106,5 @@ void MemoryMap::store16(u16 address, u16 data)
 
 void MemoryMap::clock()
 {
-    io.clock();
+    m_io.clock();
 }

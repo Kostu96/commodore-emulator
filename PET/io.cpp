@@ -38,13 +38,13 @@ void IO::store8(u16 offset, u8 data)
     switch (offset)
     {
     case 0x10: {
-        //if (PIA1ControlA.bits.PortControl)
-        //{
+        if (PIA1ControlA.bits.PortControl)
+        {
             PIA1PortA = data;
             m_keyboard.setRow(data & 0x0F);
-        //}
-        //else
-        //    PIA1DataDirectionA = data;
+        }
+        else
+            PIA1DataDirectionA = data;
     } return;
     case 0x11:
         PIA1ControlA.byte = data;
