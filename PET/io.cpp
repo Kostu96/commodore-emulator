@@ -5,7 +5,7 @@
 #include <iostream>
 #include <iomanip>
 
-constexpr u16 SYSTEM_TICKS = 50; // temp, should be 20
+constexpr u16 SYSTEM_TICKS = 20; // temp, should be 20
 constexpr u16 CLOCK_FREQ = 1000;
 
 void IO::init(CPU6502& cpu, UpdateScreenFunc func, u8* vram)
@@ -21,7 +21,7 @@ u8 IO::load8(u16 offset)
     {
     case 0x10: return 0x8F;
     case 0x11: return 0;
-    case 0x12: return 0x0F;
+    case 0x12: return 0xFF;
     case 0x20: return PIA2PortA;
     case 0x22: return PIA2PortB;
     case 0x40:

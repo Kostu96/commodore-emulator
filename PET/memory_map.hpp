@@ -3,13 +3,16 @@
 #include "io.hpp"
 
 #define SERIES1
+#define TEST 0
 
+#if TEST
 #include <fstream>
+#endif
 
 class MemoryMap
 {
 public:
-    //MemoryMap() = default;
+#if TEST
     MemoryMap()
     {
         std::ifstream fin{ "assets/6502_functional_test.bin", std::ios::binary };
@@ -20,22 +23,29 @@ public:
             fin.close();
         }
     }
+#else
+    MemoryMap() = default;
+#endif
 
     void init(CPU6502& cpu, UpdateScreenFunc func) { io.init(cpu, func, vram); }
 
-    /*u8 load8(u16 address);
-    u16 load16(u16 address);
-    void store8(u16 address, u8 data);
-    void store16(u16 address, u16 data);*/
-
+#if TEST
     u8 load8(u16 address) { return memory[address]; }
     u16 load16(u16 address) { return *reinterpret_cast<const u16*>(memory + address); }
     void store8(u16 address, u8 data) { memory[address] = data; }
     void store16(u16 address, u16 data) { *reinterpret_cast<u16*>(memory + address) = data; }
+#else
+    u8 load8(u16 address);
+    u16 load16(u16 address);
+    void store8(u16 address, u8 data);
+    void store16(u16 address, u16 data);
+#endif
 
     void clock();
 private:
+#if TEST
     u8 memory[0x10000];
+#endif
     u8 ram[0x2000]{};
     u8 vram[0x400]{};
     IO io;

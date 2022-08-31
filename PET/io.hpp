@@ -51,9 +51,9 @@ private:
     u8 VIADataDirectionA;
     u8 VIAPortB;
     u8 VIADataDirectionB;
-    u16 VIATimer1;
-    u16 VIATimer1Latch = 0xFF00;
-    u16 VIATimer2;
+    u16 VIATimer1 = 0;
+    u16 VIATimer1Latch = 0;
+    u16 VIATimer2 = 0;
     u8 VIAAUXControl;
     u8 VIAPeripheralControl;
     u8 VIAInterruptFlags = 0;

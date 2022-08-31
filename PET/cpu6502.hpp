@@ -104,6 +104,7 @@ private:
     u8 SP;
 
     // helper variables
+    u16 m_cyclesLeft;
     u16 m_absoluteAddress;
     bool m_isACCAddressing = false;
 };

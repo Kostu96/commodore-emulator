@@ -16,6 +16,8 @@ set(PET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/cpu6502.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/io.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/io.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/keyboard.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/keyboard.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/memory_map.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/memory_map.hpp

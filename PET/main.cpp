@@ -157,7 +157,7 @@ int main()
     {
         glfwPollEvents();
 
-        for (size_t i = 0; i < 512; ++i)
+        for (size_t i = 0; i < 1024; ++i)
             cpu.clock();
 
         FBO->unbind();
