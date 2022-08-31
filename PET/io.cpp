@@ -19,9 +19,9 @@ u8 IO::load8(u16 offset)
 {
     switch (offset)
     {
-    case 0x10: return 0x8F;
+    case 0x10: return 0x80 | m_keyboard.getRow();
     case 0x11: return 0;
-    case 0x12: return 0xFF;
+    case 0x12: return m_keyboard.getKey();
     case 0x20: return PIA2PortA;
     case 0x22: return PIA2PortB;
     case 0x40:
@@ -38,10 +38,13 @@ void IO::store8(u16 offset, u8 data)
     switch (offset)
     {
     case 0x10: {
-        if (PIA1ControlA.bits.PortControl)
+        //if (PIA1ControlA.bits.PortControl)
+        //{
             PIA1PortA = data;
-        else
-            PIA1DataDirectionA = data;
+            m_keyboard.setRow(data & 0x0F);
+        //}
+        //else
+        //    PIA1DataDirectionA = data;
     } return;
     case 0x11:
         PIA1ControlA.byte = data;

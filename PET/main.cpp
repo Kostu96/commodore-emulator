@@ -2,12 +2,12 @@
 
 #include "memory_map.hpp"
 #include "cpu6502.hpp"
+#include "keyboard.hpp"
 #include "shader_sources.inl"
 
 #include <glad/gl.h>
-#include <GLFW/glfw3.h>
-
 #include <glw/glw.hpp>
+#include <GLFW/glfw3.h>
 
 #include "roms/charset.inl"
 
@@ -134,6 +134,7 @@ int main()
         std::cerr << "GLFW window creation failed!\n";
         std::terminate();
     }
+    glfwSetKeyCallback(window, Keyboard::glfwKeyCallback);
 
     glfwMakeContextCurrent(window);
     glw::init(glfwGetProcAddress);
@@ -152,7 +153,6 @@ int main()
     };
     FBO->bind();
     
-
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();

@@ -1,5 +1,6 @@
 #pragma once
 #include "type_aliases.hpp"
+#include "keyboard.hpp"
 
 class CPU6502;
 
@@ -64,6 +65,7 @@ private:
     bool timer2 = false;
 
     CPU6502* m_cpu;
+    Keyboard m_keyboard;
 
     UpdateScreenFunc updateScreen;
     u8* VRAM = nullptr;
