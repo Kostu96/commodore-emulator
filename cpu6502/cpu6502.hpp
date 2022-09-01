@@ -60,8 +60,8 @@ public:
 
     void RST();
     void CLK();
-    void IRQ();
-    void NMI();
+    void setIRQ(bool state) { m_irq = state; }
+    void setNMI(bool state) { m_nmi = state; }
 
     u16 getPC() const { return PC; }
     Flags getFlags() const { return F; }
@@ -69,6 +69,9 @@ public:
     CPU6502() = default;
     CPU6502(const CPU6502&) = delete;
 private:
+    void IRQ();
+    void NMI();
+
     // Memory Access:
     u8 load8(u16 address);
     u16 load16(u16 address);
@@ -137,6 +140,9 @@ private:
     u16 m_cyclesLeft;
     u16 m_absoluteAddress;
     bool m_isACCAddressing = false;
+    bool m_irq = false;
+    bool m_nmi = false;
+    bool m_isDuringNMI = false;
 
     struct ReadMapEntry {
         using ReadFunc = std::function<u8(u16)>;

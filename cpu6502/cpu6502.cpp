@@ -19,6 +19,9 @@ void CPU6502::CLK()
 {
     if (m_cyclesLeft == 0)
     {
+        if (m_irq && F.bits.I == 0) IRQ();
+        if (m_nmi && !m_isDuringNMI) NMI();
+
         u8 instruction = load8(PC++);
 
         switch (instruction)
@@ -184,27 +187,25 @@ void CPU6502::CLK()
 
 void CPU6502::IRQ()
 {
-    if (F.bits.I == 0)
-    {
-        push16(PC);
+    push16(PC);
 
-        F.bits.B = 0;
-        F.bits.I = 1;
-        push8(F.byte);
+    F.bits.B = 0;
+    push8(F.byte);
+    F.bits.I = 1;
 
-        PC = load16(0xFFFE); // IRQ vector
+    PC = load16(0xFFFE); // IRQ vector
 
-        m_cyclesLeft += 2;
-    }
+    m_cyclesLeft += 2;
 }
 
 void CPU6502::NMI()
 {
+    m_isDuringNMI = true;
     push16(PC);
 
     F.bits.B = 0;
-    F.bits.I = 1;
     push8(F.byte);
+    F.bits.I = 1;
 
     PC = load16(0xFFFA); // NMI vector
 
@@ -481,6 +482,8 @@ void CPU6502::op_RTI()
 {
     F.byte = pop8() & 0xEF;
     PC = pop16();
+
+    if (m_isDuringNMI) m_isDuringNMI = false;
 }
 #pragma endregion
 

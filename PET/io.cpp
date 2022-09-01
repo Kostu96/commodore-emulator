@@ -113,10 +113,13 @@ void IO::clock()
         VIAPortB |= 0x20;
         if (!m_cpu.getFlags().bits.I)
             updateScreen();
-        m_cpu.IRQ();
+        m_cpu.setIRQ(true);
     }
     else
+    {
         VIAPortB &= ~0x20;
+        m_cpu.setIRQ(false);
+    }
 
     if (timer1)
     {
@@ -127,8 +130,9 @@ void IO::clock()
             VIATimer1 = 0;
             timer1 = false;
             VIAInterruptFlags |= 0x40;
-            if ((VIAInterruptEnable & 0x80) && (VIAInterruptEnable & 0x40))
-                m_cpu.IRQ();
+            m_cpu.setIRQ((VIAInterruptEnable & 0x80) && (VIAInterruptEnable & 0x40));
         }
+        else
+            m_cpu.setIRQ(false);
     }
 }
