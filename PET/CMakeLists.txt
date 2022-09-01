@@ -12,8 +12,6 @@ set(PET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/kernal1_F000.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/kernal2_F000.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/roms/kernal4_F000.inl
-    ${CMAKE_CURRENT_SOURCE_DIR}/cpu6502.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/cpu6502.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/io.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/io.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/keyboard.cpp
@@ -22,7 +20,6 @@ set(PET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/memory_map.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/memory_map.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shader_sources.inl
-    ${CMAKE_CURRENT_SOURCE_DIR}/type_aliases.hpp
 )
 
 add_executable(${PET_TARGET_NAME} ${PET_SOURCES})
@@ -36,6 +33,7 @@ target_compile_options(${PET_TARGET_NAME} PRIVATE
 )
 
 target_link_libraries(${PET_TARGET_NAME} PRIVATE
+    cpu6502
     glfw
     glw
 )

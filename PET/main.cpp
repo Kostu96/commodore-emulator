@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include "memory_map.hpp"
 #include "cpu6502.hpp"
+#include "io.hpp"
 #include "keyboard.hpp"
 #include "shader_sources.inl"
 
@@ -16,6 +16,7 @@ constexpr u16 PET_SCREEN_ROWS = 25;
 constexpr u16 PET_SCREEN_WIDTH = PET_SCREEN_COLS * 8;
 constexpr u16 PET_SCREEN_HEIGHT = PET_SCREEN_ROWS * 8;
 
+#pragma region OGLStuff
 glw::Texture* keyboardTexture = nullptr;
 
 glw::Shader* pointShader = nullptr;
@@ -95,12 +96,76 @@ void shutdown()
 
     delete keyboardTexture;
 }
+#pragma endregion
 
-void updateScreen(u8* vram)
+#define ROM_SERIES1
+
+static struct {
+    u8 memory[0x2000];
+
+    u8 read(u16 address) const { return memory[address]; }
+    void write(u16 address, u8 data) { memory[address] = data; }
+} RAM;
+
+static struct {
+    u8 memory[0x400];
+
+    u8 read(u16 address) const { return memory[address]; }
+    void write(u16 address, u8 data) { memory[address] = data; }
+
+    u8& operator[](u16 offset) { return memory[offset]; }
+} VRAM;
+
+static struct {
+    inline
+#if defined(ROM_SERIES1)
+#include "roms/basic1_C000.inl"
+#endif
+#if defined(ROM_SERIES2)
+#include "roms/basic2_C000.inl"
+#endif
+#if defined(ROM_SERIES4)
+#include "roms/basic4_B000.inl"
+#endif
+
+    u8 read(u16 address) const { return BASIC[address]; }
+} BASIC;
+
+static struct {
+    inline
+#if defined(ROM_SERIES1)
+#include "roms/editor1_E000.inl"
+#endif
+#if defined(ROM_SERIES2)
+#include "roms/editor2_E000.inl"
+#endif
+#if defined(ROM_SERIES4)
+#include "roms/editor4_E000.inl"
+#endif
+
+    u8 read(u16 address) const { return EDITOR[address]; }
+} EDITOR;
+
+static struct {
+    inline
+#if defined(ROM_SERIES1)
+#include "roms/kernal1_F000.inl"
+#endif
+#if defined(ROM_SERIES2)
+#include "roms/kernal2_F000.inl"
+#endif
+#if defined(ROM_SERIES4)
+#include "roms/kernal4_F000.inl"
+#endif
+
+    u8 read(u16 address) const { return KERNAL[address]; }
+} KERNAL;
+
+void updateScreen()
 {
     for (u16 offset = 0; offset < 1000; offset++)
     {
-        u8 character = vram[offset];
+        u8 character = VRAM[offset];
         const u8* char_data = charset[character];
         for (u8 row = 0; row < 8; row++)
             for (u8 col = 0; col < 8; col++)
@@ -117,9 +182,21 @@ void updateScreen(u8* vram)
 
 int main()
 {
-    MemoryMap memoryMap{};
-    CPU6502 cpu{ memoryMap };
-    memoryMap.init(cpu, updateScreen);
+    CPU6502 cpu{};
+    IO io{ cpu, updateScreen };
+
+    cpu.map(RAM,    { 0x0000, 0x2000 });
+    cpu.map(VRAM,   { 0x8000, 0x0400 });
+#if defined(ROM_SERIES4)
+    cpu.map(BASIC,  { 0xB000, 0x3000 });
+#else
+    cpu.map(BASIC,  { 0xC000, 0x2000 });
+#endif
+    cpu.map(EDITOR, { 0xE000, 0x0800 });
+    cpu.map(io,     { 0xE800, 0x0800 });
+    cpu.map(KERNAL, { 0xF000, 0x1000 });
+
+    cpu.RST();
 
     if (!glfwInit()) {
         std::cerr << "GLFW init failed!\n";
@@ -134,7 +211,7 @@ int main()
         std::cerr << "GLFW window creation failed!\n";
         std::terminate();
     }
-    glfwSetWindowUserPointer(window, &memoryMap.getIO().getKeyboard());
+    glfwSetWindowUserPointer(window, &io.getKeyboard());
     glfwSetKeyCallback(window, Keyboard::glfwKeyCallback);
 
     glfwMakeContextCurrent(window);
@@ -158,8 +235,10 @@ int main()
     {
         glfwPollEvents();
 
-        for (size_t i = 0; i < 1024; ++i)
-            cpu.clock();
+        for (size_t i = 0; i < 1024; ++i) {
+            io.clock();
+            cpu.CLK();
+        }
 
         FBO->unbind();
         textureVAO->bind();

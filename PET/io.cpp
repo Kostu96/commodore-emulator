@@ -5,17 +5,9 @@
 #include <iostream>
 #include <iomanip>
 
-constexpr u16 SYSTEM_TICKS = 20; // temp, should be 20
-constexpr u16 CLOCK_FREQ = 1000;
+constexpr u16 SYSTEM_TICKS = 20000; // 1MHz / 20000 = 50Hz
 
-void IO::init(CPU6502& cpu, UpdateScreenFunc func, u8* vram)
-{
-    m_cpu = &cpu;
-    updateScreen = func;
-    VRAM = vram;
-}
-
-u8 IO::load8(u16 offset)
+u8 IO::read(u16 offset)
 {
     switch (offset)
     {
@@ -33,7 +25,7 @@ u8 IO::load8(u16 offset)
     return 0xCD;
 }
 
-void IO::store8(u16 offset, u8 data)
+void IO::write(u16 offset, u8 data)
 {
     switch (offset)
     {
@@ -119,9 +111,9 @@ void IO::clock()
     {
         m_cycles = 0;
         VIAPortB |= 0x20;
-        if (!m_cpu->getFlags().bits.I)
-            updateScreen(VRAM);
-        m_cpu->IRQ();
+        if (!m_cpu.getFlags().bits.I)
+            updateScreen();
+        m_cpu.IRQ();
     }
     else
         VIAPortB &= ~0x20;
@@ -136,7 +128,7 @@ void IO::clock()
             timer1 = false;
             VIAInterruptFlags |= 0x40;
             if ((VIAInterruptEnable & 0x80) && (VIAInterruptEnable & 0x40))
-                m_cpu->IRQ();
+                m_cpu.IRQ();
         }
     }
 }

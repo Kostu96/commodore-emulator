@@ -4,17 +4,17 @@
 
 class CPU6502;
 
-typedef void(*UpdateScreenFunc)(u8*);
+typedef void(*UpdateScreenFunc)();
 
 class IO
 {
 public:
-    IO() = default;
+    IO(CPU6502& cpu, UpdateScreenFunc func) :
+        m_cpu{ cpu },
+        updateScreen{ func } {}
 
-    void init(CPU6502& cpu, UpdateScreenFunc func, u8* vram);
-
-    u8 load8(u16 offset);
-    void store8(u16 offset, u8 data);
+    u8 read(u16 offset);
+    void write(u16 offset, u8 data);
 
     void clock();
 
@@ -66,9 +66,8 @@ private:
     bool timer1 = false;
     bool timer2 = false;
 
-    CPU6502* m_cpu;
     Keyboard m_keyboard;
-
+    CPU6502& m_cpu;
     UpdateScreenFunc updateScreen;
-    u8* VRAM = nullptr;
+
 };

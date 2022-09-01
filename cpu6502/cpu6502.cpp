@@ -1,35 +1,29 @@
 #include "cpu6502.hpp"
 
-#include "memory_map.hpp"
-
 #include <iostream>
 #include <iomanip>
 
-CPU6502::CPU6502(MemoryMap& memoryMap) :
-    m_memoryMap{ memoryMap }
-{   
-    reset();
-}
-
-void CPU6502::reset()
+void CPU6502::RST()
 {
+    m_cyclesLeft = 0;
+
 #if TEST
     PC = 0x400;
 #else
-    PC = m_memoryMap.load16(0xFFFC); // RESET vector
+    PC = load16(0xFFFC); // RESET vector
 #endif
     ACC = X = Y = 0;
     SP = 0xFD;
-    F.bits.unused = 1;
+    F.bits.U = 1;
     F.bits.I = 1;
 
-    m_cyclesLeft = 8;
+    m_cyclesLeft += 6;
 }
 
-void CPU6502::clock()
+void CPU6502::CLK()
 {
 #if not TEST
-    m_memoryMap.clock();
+//    m_memoryMap.clock();
 #endif
 
     //static u32 count = 0;
@@ -38,8 +32,7 @@ void CPU6502::clock()
 
     if (m_cyclesLeft == 0)
     {
-        u8 instruction = m_memoryMap.load8(PC++);
-        m_cyclesLeft++;
+        u8 instruction = load8(PC++);
 
         switch (instruction)
         {
@@ -212,9 +205,9 @@ void CPU6502::IRQ()
         F.bits.I = 1;
         push8(F.byte);
 
-        PC = m_memoryMap.load16(0xFFFE); // IRQ vector
+        PC = load16(0xFFFE); // IRQ vector
 
-        m_cyclesLeft = 7;
+        m_cyclesLeft += 2;
     }
 }
 
@@ -226,120 +219,175 @@ void CPU6502::NMI()
     F.bits.I = 1;
     push8(F.byte);
 
-    PC = m_memoryMap.load16(0xFFFA); // NMI vector
+    PC = load16(0xFFFA); // NMI vector
 
-    m_cyclesLeft = 8;
+    m_cyclesLeft += 3;
+}
+
+#pragma region MemoryAccess
+u8 CPU6502::load8(u16 address)
+{
+    u8 data = 0;
+
+    for (auto& entry : m_readMap)
+    {
+        u16 offset;
+        if (entry.range.contains(address, offset))
+        {
+            data = entry.read(offset);
+            break;
+        }
+    }
+
+    m_cyclesLeft++;
+    return data;
+}
+
+u16 CPU6502::load16(u16 address)
+{
+    u16 data = 0;
+
+    for (auto& entry : m_readMap)
+    {
+        u16 offset;
+        if (entry.range.contains(address, offset))
+        {
+            data = entry.read(offset + 1);
+            data <<= 8;
+            data |= entry.read(offset);
+            break;
+        }
+    }
+
+    m_cyclesLeft += 2;
+    return data;
+}
+
+void CPU6502::store8(u16 address, u8 data)
+{
+    for (auto& entry : m_writeMap)
+    {
+        u16 offset;
+        if (entry.range.contains(address, offset))
+        {
+            entry.write(offset, data);
+            break;
+        }
+    }
+
+    m_cyclesLeft++;
+}
+
+void CPU6502::store16(u16 address, u16 data)
+{
+    for (auto& entry : m_writeMap)
+    {
+        u16 offset;
+        if (entry.range.contains(address, offset))
+        {
+            entry.write(offset, data & 0xFF);
+            entry.write(offset + 1, data >> 8);
+            break;
+        }
+    }
+
+    m_cyclesLeft += 2;
 }
 
 void CPU6502::push8(u8 data)
 {
-    m_memoryMap.store8(0x100 + SP, data);
-    SP--;
+    store8(0x100 + SP--, data);
 }
 
 void CPU6502::push16(u16 data)
 {
-    m_memoryMap.store16(0x100 + SP - 1, data);
+    store16(0x100 + SP - 1, data);
     SP -= 2;
 }
 
 u8 CPU6502::pop8()
 {
-    SP++;
-    return m_memoryMap.load8(0x100 + SP);
+    return load8(0x100 + ++SP);
 }
 
 u16 CPU6502::pop16()
 {
     SP += 2;
-    return m_memoryMap.load16(0x100 + SP - 1);
+    return load16(0x100 + SP - 1);
 }
+#pragma endregion
 
 #pragma region AdressingModes
 void CPU6502::am_ACC()
 {
-    // takes 0 cycles
-
     m_isACCAddressing = true;
 }
 
 void CPU6502::am_IMM()
 {
-    // takes 0 cycles
-
     m_absoluteAddress = PC++;
 }
 
 void CPU6502::am_ZPG()
 {
-    // takes 1 cycle
-
-    m_absoluteAddress = m_memoryMap.load8(PC++);
+    m_absoluteAddress = load8(PC++);
 }
 
 void CPU6502::am_ZPX()
 {
-    // takes 2 cycles
-
-    m_absoluteAddress = m_memoryMap.load8(PC++) + X;
+    m_absoluteAddress = load8(PC++) + X;
     m_absoluteAddress &= 0x00FF;
+    m_cyclesLeft++;
 }
 
 void CPU6502::am_ZPY()
 {
-    // takes 2 cycles
-
-    m_absoluteAddress = m_memoryMap.load8(PC++) + Y;
+    m_absoluteAddress = load8(PC++) + Y;
     m_absoluteAddress &= 0x00FF;
+    m_cyclesLeft++;
 }
 
 void CPU6502::am_ABS()
 {
-    // takes 2 cycles
-
-    m_absoluteAddress = m_memoryMap.load16(PC);
+    m_absoluteAddress = load16(PC);
     PC += 2;
 }
 
 void CPU6502::am_ABX()
 {
-    // takes 3 cycles
-
-    m_absoluteAddress = m_memoryMap.load16(PC) + X;
+    m_absoluteAddress = load16(PC) + X;
     PC += 2;
+    m_cyclesLeft++;
 }
 
 void CPU6502::am_ABY()
 {
-    // takes 3 cycles
-
-    m_absoluteAddress = m_memoryMap.load16(PC) + Y;
+    m_absoluteAddress = load16(PC) + Y;
     PC += 2;
+    m_cyclesLeft++;
 }
 
 void CPU6502::am_IND()
 {
-    u16 ptr = m_memoryMap.load16(PC);
+    u16 ptr = load16(PC);
     PC += 2;
-
-    m_absoluteAddress = m_memoryMap.load8(((ptr & 0xFF) == 0xFF) ? ptr & 0xFF00 : ptr + 1) << 8;
-    m_absoluteAddress |= m_memoryMap.load8(ptr);
+    m_absoluteAddress = load8(((ptr & 0xFF) == 0xFF) ? ptr & 0xFF00 : ptr + 1) << 8;
+    m_absoluteAddress |= load8(ptr);
 
 }
 
 void CPU6502::am_INX()
 {
-    u8 ptr = m_memoryMap.load8(PC++) + X;
-
-    m_absoluteAddress = m_memoryMap.load8(ptr + 1) << 8;
-    m_absoluteAddress |= m_memoryMap.load8(ptr);
+    u8 ptr = load8(PC++) + X;
+    m_absoluteAddress = load8(ptr + 1) << 8;
+    m_absoluteAddress |= load8(ptr);
+    m_cyclesLeft++;
 }
 
 void CPU6502::am_INY()
 {
-    u8 ptr = m_memoryMap.load8(PC++);
-
-    m_absoluteAddress = m_memoryMap.load16(ptr) + Y;
+    u8 ptr = load8(PC++);
+    m_absoluteAddress = load16(ptr) + Y;
 }
 #pragma endregion
 
@@ -351,17 +399,13 @@ void CPU6502::op_NOP()
 #pragma region BranchInstructions
 void CPU6502::op_JMP()
 {
-    // takes 3 cycles
-
     PC = m_absoluteAddress;
+    m_cyclesLeft++;
 }
 
 void CPU6502::op_BPL()
 {
-    // takes 2** cycles
-
-    s8 offset = m_memoryMap.load8(PC++);
-    m_cyclesLeft++;
+    s8 offset = load8(PC++);
 
     if (F.bits.N == 0)
         PC += offset;
@@ -369,10 +413,7 @@ void CPU6502::op_BPL()
 
 void CPU6502::op_BMI()
 {
-    // takes 2** cycles
-
-    s8 offset = m_memoryMap.load8(PC++);
-    m_cyclesLeft++;
+    s8 offset = load8(PC++);
 
     if (F.bits.N == 1)
         PC += offset;
@@ -380,10 +421,7 @@ void CPU6502::op_BMI()
 
 void CPU6502::op_BEQ()
 {
-    // takes 2** cycles
-
-    s8 offset = m_memoryMap.load8(PC++);
-    m_cyclesLeft++;
+    s8 offset = load8(PC++);
 
     if (F.bits.Z == 1)
         PC += offset;
@@ -391,10 +429,7 @@ void CPU6502::op_BEQ()
 
 void CPU6502::op_BNE()
 {
-    // takes 2** cycles
-
-    s8 offset = m_memoryMap.load8(PC++);
-    m_cyclesLeft++;
+    s8 offset = load8(PC++);
 
     if (F.bits.Z == 0)
         PC += offset;
@@ -402,10 +437,7 @@ void CPU6502::op_BNE()
 
 void CPU6502::op_BCS()
 {
-    // takes 2** cycles
-
-    s8 offset = m_memoryMap.load8(PC++);
-    m_cyclesLeft++;
+    s8 offset = load8(PC++);
 
     if (F.bits.C == 1)
         PC += offset;
@@ -413,10 +445,7 @@ void CPU6502::op_BCS()
 
 void CPU6502::op_BCC()
 {
-    // takes 2** cycles
-
-    s8 offset = m_memoryMap.load8(PC++);
-    m_cyclesLeft++;
+    s8 offset = load8(PC++);
 
     if (F.bits.C == 0)
         PC += offset;
@@ -424,10 +453,7 @@ void CPU6502::op_BCC()
 
 void CPU6502::op_BVS()
 {
-    // takes 2** cycles
-
-    s8 offset = m_memoryMap.load8(PC++);
-    m_cyclesLeft++;
+    s8 offset = load8(PC++);
 
     if (F.bits.V == 1)
         PC += offset;
@@ -435,10 +461,7 @@ void CPU6502::op_BVS()
 
 void CPU6502::op_BVC()
 {
-    // takes 2** cycles
-
-    s8 offset = m_memoryMap.load8(PC++);
-    m_cyclesLeft++;
+    s8 offset = load8(PC++);
 
     if (F.bits.V == 0)
         PC += offset;
@@ -446,130 +469,110 @@ void CPU6502::op_BVC()
 
 void CPU6502::op_JSR()
 {
-    // takes 6 cycles
-
     push16(PC - 1);
     PC = m_absoluteAddress;
 }
 
 void CPU6502::op_RTS()
 {
-    // takes 6 cycles
-
     PC = pop16() + 1;
+}
+
+void CPU6502::op_BRK()
+{
+    push16(PC + 1);
+
+    push8(F.byte | 0x10);
+    F.bits.I = 1;
+
+    PC = load16(0xFFFE); // IRQ vector
+
+    m_cyclesLeft += 2;
+}
+
+void CPU6502::op_RTI()
+{
+    F.byte = pop8() & 0xEF;
+    PC = pop16();
 }
 #pragma endregion
 
-#pragma region LoadInstructions
+#pragma region LoadStoreInstructions
 void CPU6502::op_LDA()
 {
-    // takes 2 cycles
-
-    ACC = m_memoryMap.load8(m_absoluteAddress);
-    m_cyclesLeft++;
-
+    ACC = load8(m_absoluteAddress);
     F.bits.Z = (ACC == 0);
     F.bits.N = (ACC >> 7);
 }
 
 void CPU6502::op_LDX()
 {
-    // takes 2 cycles
-
-    X = m_memoryMap.load8(m_absoluteAddress);
-    m_cyclesLeft++;
-
+    X = load8(m_absoluteAddress);
     F.bits.Z = (X == 0);
     F.bits.N = (X >> 7);
 }
 
 void CPU6502::op_LDY()
 {
-    // takes 2 cycles
-
-    Y = m_memoryMap.load8(m_absoluteAddress);
-    m_cyclesLeft++;
-
+    Y = load8(m_absoluteAddress);
     F.bits.Z = (Y == 0);
     F.bits.N = (Y >> 7);
 }
-#pragma endregion
 
-#pragma region StoreInstructions
 void CPU6502::op_STA()
 {
-    m_memoryMap.store8(m_absoluteAddress, ACC);
-    m_cyclesLeft++;
+    store8(m_absoluteAddress, ACC);
 }
 
 void CPU6502::op_STX()
 {
-    m_memoryMap.store8(m_absoluteAddress, X);
-    m_cyclesLeft++;
+    store8(m_absoluteAddress, X);
 }
 
 void CPU6502::op_STY()
 {
-    m_memoryMap.store8(m_absoluteAddress, Y);
-    m_cyclesLeft++;
+    store8(m_absoluteAddress, Y);
 }
 #pragma endregion
 
 #pragma region TransferInstructions
 void CPU6502::op_TXA()
 {
-    // takes 2 cycles
-
     ACC = X;
-
     F.bits.Z = (ACC == 0);
     F.bits.N = (ACC >> 7);
 }
 
 void CPU6502::op_TAX()
 {
-    // takes 2 cycles
-
     X = ACC;
-
     F.bits.Z = (X == 0);
     F.bits.N = (X >> 7);
 }
 
 void CPU6502::op_TYA()
 {
-    // takes 2 cycles
-
     ACC = Y;
-
     F.bits.Z = (ACC == 0);
     F.bits.N = (ACC >> 7);
 }
 
 void CPU6502::op_TAY()
 {
-    // takes 2 cycles
-
     Y = ACC;
-
     F.bits.Z = (Y == 0);
     F.bits.N = (Y >> 7);
 }
 
 void CPU6502::op_TSX()
 {
-    // takes 2 cycles
-
     X = SP;
-
     F.bits.Z = (X == 0);
     F.bits.N = (X >> 7);
 }
 
 void CPU6502::op_TXS()
 {
-    // takes 2 cycles
-
     SP = X;
 }
 #pragma endregion
@@ -577,32 +580,23 @@ void CPU6502::op_TXS()
 #pragma region StackInstructions
 void CPU6502::op_PHA()
 {
-    // takes 3 cycles
-
     push8(ACC);
 }
 
 void CPU6502::op_PLA()
 {
-    // takes 4 cycles
-
     ACC = pop8();
-
     F.bits.Z = (ACC == 0);
     F.bits.N = (ACC >> 7);
 }
 
 void CPU6502::op_PHP()
 {
-    // takes 3 cycles
-
     push8(F.byte | 0x10);
 }
 
 void CPU6502::op_PLP()
 {
-    // takes 4 cycles
-
     F.byte = pop8() | 0x20;
 }
 #pragma endregion
@@ -613,8 +607,7 @@ void CPU6502::op_ADC()
     if (F.bits.D)
         std::cerr << "Decimal mode!\n";
 
-    u16 memory = m_memoryMap.load8(m_absoluteAddress);
-    m_cyclesLeft++;
+    u16 memory = load8(m_absoluteAddress);
 
     u16 temp = ACC + memory + F.bits.C;
     F.bits.V = (~(static_cast<u16>(ACC) ^ memory) & (static_cast<u16>(ACC) ^ temp)) >> 7;
@@ -630,8 +623,7 @@ void CPU6502::op_SBC()
     if (F.bits.D)
         std::cerr << "Decimal mode!\n";
 
-    u16 memory = m_memoryMap.load8(m_absoluteAddress);
-    m_cyclesLeft++;
+    u16 memory = load8(m_absoluteAddress);
 
     memory ^= 0x00FF;
     u16 temp = ACC + memory + F.bits.C;
@@ -645,41 +637,27 @@ void CPU6502::op_SBC()
 
 void CPU6502::op_ORA()
 {
-    // takes 2 cycles
-
-    ACC |= m_memoryMap.load8(m_absoluteAddress);
-    m_cyclesLeft++;
-
+    ACC |= load8(m_absoluteAddress);
     F.bits.Z = (ACC == 0);
     F.bits.N = (ACC >> 7);
 }
 
 void CPU6502::op_AND()
 {
-    // takes 2 cycles
-
-    ACC &= m_memoryMap.load8(m_absoluteAddress);
-    m_cyclesLeft++;
-
+    ACC &= load8(m_absoluteAddress);
     F.bits.Z = (ACC == 0);
     F.bits.N = (ACC >> 7);
 }
 
 void CPU6502::op_EOR()
 {
-    // takes 2 cycles
-
-    ACC ^= m_memoryMap.load8(m_absoluteAddress);
-    m_cyclesLeft++;
-
+    ACC ^= load8(m_absoluteAddress);
     F.bits.Z = (ACC == 0);
     F.bits.N = (ACC >> 7);
 }
 
 void CPU6502::op_LSR()
 {
-    // takes 2 cycles
-
     u8 data;
     if (m_isACCAddressing)
     {
@@ -692,14 +670,11 @@ void CPU6502::op_LSR()
     }
     else
     {
-        data = m_memoryMap.load8(m_absoluteAddress);
-        m_cyclesLeft++;
-
+        data = load8(m_absoluteAddress);
         F.bits.C = (data & 1);
         data >>= 1;
         data &= 0x7F;
-        m_memoryMap.store8(m_absoluteAddress, data);
-        m_cyclesLeft++;
+        store8(m_absoluteAddress, data);
     }
 
     F.bits.Z = (data == 0);
@@ -708,8 +683,6 @@ void CPU6502::op_LSR()
 
 void CPU6502::op_ASL()
 {
-    // takes 2 cycles
-
     u8 data;
     if (m_isACCAddressing)
     {
@@ -721,13 +694,10 @@ void CPU6502::op_ASL()
     }
     else
     {
-        data = m_memoryMap.load8(m_absoluteAddress);
-        m_cyclesLeft++;
-
+        data = load8(m_absoluteAddress);
         F.bits.C = (data >> 7);
         data <<= 1;
-        m_memoryMap.store8(m_absoluteAddress, data);
-        m_cyclesLeft++;
+        store8(m_absoluteAddress, data);
     }
 
     F.bits.Z = (data == 0);
@@ -736,8 +706,6 @@ void CPU6502::op_ASL()
 
 void CPU6502::op_ROL()
 {
-    // takes 2 cycles
-
     u8 data;
     u8 tempCarry = F.bits.C;
     if (m_isACCAddressing)
@@ -751,14 +719,11 @@ void CPU6502::op_ROL()
     }
     else
     {
-        data = m_memoryMap.load8(m_absoluteAddress);
-        m_cyclesLeft++;
-
+        data = load8(m_absoluteAddress);
         F.bits.C = (data >> 7);
         data <<= 1;
         data |= tempCarry;
-        m_memoryMap.store8(m_absoluteAddress, data);
-        m_cyclesLeft++;
+        store8(m_absoluteAddress, data);
     }
 
     F.bits.Z = (data == 0);
@@ -767,8 +732,6 @@ void CPU6502::op_ROL()
 
 void CPU6502::op_ROR()
 {
-    // takes 2 cycles
-
     u8 data;
     u8 tempCarry = F.bits.C;
     tempCarry <<= 7;
@@ -784,15 +747,12 @@ void CPU6502::op_ROR()
     }
     else
     {
-        data = m_memoryMap.load8(m_absoluteAddress);
-        m_cyclesLeft++;
-
+        data = load8(m_absoluteAddress);
         F.bits.C = (data & 1);
         data >>= 1;
         data &= 0x7F;
         data |= tempCarry;
-        m_memoryMap.store8(m_absoluteAddress, data);
-        m_cyclesLeft++;
+        store8(m_absoluteAddress, data);
     }
 
     F.bits.Z = (data == 0);
@@ -801,11 +761,7 @@ void CPU6502::op_ROR()
 
 void CPU6502::op_BIT()
 {
-    // takes 2 cycles
-
-    u8 temp = m_memoryMap.load8(m_absoluteAddress);
-    m_cyclesLeft++;
-
+    u8 temp = load8(m_absoluteAddress);
     F.bits.Z = ((ACC & temp) == 0);
     F.bits.N = (temp >> 7);
     F.bits.V = (temp >> 6) & 1;
@@ -813,79 +769,53 @@ void CPU6502::op_BIT()
 
 void CPU6502::op_INC()
 {
-    // takes 4 cycles
-
-    u8 data = m_memoryMap.load8(m_absoluteAddress);
-    m_cyclesLeft++;
-
+    u8 data = load8(m_absoluteAddress);
     data++;
-    m_memoryMap.store8(m_absoluteAddress, data);
-    m_cyclesLeft++;
-
+    store8(m_absoluteAddress, data);
     F.bits.Z = (data == 0);
     F.bits.N = (data >> 7);
 }
 
 void CPU6502::op_INX()
 {
-    // takes 2 cycles
-
     X++;
-
     F.bits.Z = (X == 0);
     F.bits.N = (X >> 7);
 }
 
 void CPU6502::op_INY()
 {
-    // takes 2 cycles
-
     Y++;
-
     F.bits.Z = (Y == 0);
     F.bits.N = (Y >> 7);
 }
 
 void CPU6502::op_DEC()
 {
-    // takes 4 cycles
-
-    u8 data = m_memoryMap.load8(m_absoluteAddress);
-    m_cyclesLeft++;
-
+    u8 data = load8(m_absoluteAddress);
     data--;
-    m_memoryMap.store8(m_absoluteAddress, data);
-    m_cyclesLeft++;
-
+    store8(m_absoluteAddress, data);
     F.bits.Z = (data == 0);
     F.bits.N = (data >> 7);
 }
 
 void CPU6502::op_DEX()
 {
-    // takes 2 cycles
-
     X--;
-
     F.bits.Z = (X == 0);
     F.bits.N = (X >> 7);
 }
 
 void CPU6502::op_DEY()
 {
-    // takes 2 cycles
-
     Y--;
-
     F.bits.Z = (Y == 0);
     F.bits.N = (Y >> 7);
 }
 
 void CPU6502::op_CMP()
 {
-    u16 memory = m_memoryMap.load8(m_absoluteAddress);
-    m_cyclesLeft++;
-
+    u16 memory = load8(m_absoluteAddress);
     u16 temp = static_cast<u16>(ACC) - memory;
     F.bits.C = ACC >= memory ? 1 : 0;
     F.bits.Z = ((temp & 0xFF) == 0);
@@ -894,9 +824,7 @@ void CPU6502::op_CMP()
 
 void CPU6502::op_CPX()
 {
-    u16 memory = m_memoryMap.load8(m_absoluteAddress);
-    m_cyclesLeft++;
-
+    u16 memory = load8(m_absoluteAddress);
     u16 temp = static_cast<u16>(X) - memory;
     F.bits.C = X >= memory ? 1 : 0;
     F.bits.Z = ((temp & 0xFF) == 0);
@@ -905,9 +833,7 @@ void CPU6502::op_CPX()
 
 void CPU6502::op_CPY()
 {
-    u16 memory = m_memoryMap.load8(m_absoluteAddress);
-    m_cyclesLeft++;
-
+    u16 memory = load8(m_absoluteAddress);
     u16 temp = static_cast<u16>(Y) - memory;
     F.bits.C = Y >= memory ? 1 : 0;
     F.bits.Z = ((temp & 0xFF) == 0);
@@ -956,29 +882,5 @@ void CPU6502::op_CLV()
 {
     F.bits.V = 0;
     m_cyclesLeft++;
-}
-#pragma endregion
-
-#pragma region Interrupts
-void CPU6502::op_BRK()
-{
-    // takes 7 cycles
-
-    push16(PC + 1);
-
-    push8(F.byte | 0x10);
-    F.bits.I = 1;
-
-    PC = m_memoryMap.load16(0xFFFE); // IRQ vector
-
-    m_cyclesLeft = 7;
-}
-
-void CPU6502::op_RTI()
-{
-    // takes 6 cycle
-
-    F.byte = pop8() & 0xEF;
-    PC = pop16();
 }
 #pragma endregion
