@@ -6,27 +6,23 @@
 #include <vector>
 
 template <typename T>
-concept Mapable =
-    requires(T object, u16 address, u8 data) {
-        { object.read(address) } -> std::same_as<u8>;
-        { object.write(address, data) } -> std::same_as<void>;
-    };
-
+concept ConstMapable = requires(T object, u16 address) {
+    { object.read(address) } -> std::same_as<u8>;
+};
 template <typename T>
-concept ConstMapable =
-    requires(T object, u16 address) {
-        { object.read(address) } -> std::same_as<u8>;
-    };
+concept Mapable = ConstMapable<T> && requires(T object, u16 address, u8 data) {
+    { object.write(address, data) } -> std::same_as<void>;
+};
 
 struct AddressRange
 {
     u16 start;
-    u16 size;
+    u16 end;
 
     bool contains(u16 address, u16& offset) const
     {
         offset = address - start;
-        return (address >= start) && (address < start + size);
+        return (address >= start) && (address <= end);
     }
 };
 
@@ -57,7 +53,6 @@ public:
         u8 byte;
     };
 
-
     template <Mapable Device>
     void map(Device& device, AddressRange range);
     template <ConstMapable ConstDevice>
@@ -68,6 +63,7 @@ public:
     void IRQ();
     void NMI();
 
+    u16 getPC() const { return PC; }
     Flags getFlags() const { return F; }
 
     CPU6502() = default;

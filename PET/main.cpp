@@ -185,16 +185,16 @@ int main()
     CPU6502 cpu{};
     IO io{ cpu, updateScreen };
 
-    cpu.map(RAM,    { 0x0000, 0x2000 });
-    cpu.map(VRAM,   { 0x8000, 0x0400 });
+    cpu.map(RAM,    { 0x0000, 0x1FFF });
+    cpu.map(VRAM,   { 0x8000, 0x83FF });
 #if defined(ROM_SERIES4)
-    cpu.map(BASIC,  { 0xB000, 0x3000 });
+    cpu.map(BASIC,  { 0xB000, 0xDFFF });
 #else
-    cpu.map(BASIC,  { 0xC000, 0x2000 });
+    cpu.map(BASIC,  { 0xC000, 0xDFFF });
 #endif
-    cpu.map(EDITOR, { 0xE000, 0x0800 });
-    cpu.map(io,     { 0xE800, 0x0800 });
-    cpu.map(KERNAL, { 0xF000, 0x1000 });
+    cpu.map(EDITOR, { 0xE000, 0xE7FF });
+    cpu.map(io,     { 0xE800, 0xEFFF });
+    cpu.map(KERNAL, { 0xF000, 0xFFFF });
 
     cpu.RST();
 

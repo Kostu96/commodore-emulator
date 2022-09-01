@@ -22,10 +22,6 @@ void CPU6502::RST()
 
 void CPU6502::CLK()
 {
-#if not TEST
-//    m_memoryMap.clock();
-#endif
-
     //static u32 count = 0;
     //if (PC == 0x35bd) count++;
     //if (PC == 0x35bd && count == 0x100) __debugbreak();
@@ -604,12 +600,27 @@ void CPU6502::op_PLP()
 #pragma region ALUInstructions
 void CPU6502::op_ADC()
 {
-    if (F.bits.D)
-        std::cerr << "Decimal mode!\n";
-
+    u16 temp;
     u16 memory = load8(m_absoluteAddress);
+    
+    if (F.bits.D)
+    {
+        u8 memL = memory & 0x0F;
+        u8 memH = memory & 0xF0;
+        u8 accL = ACC & 0x0F;
+        u8 accH = ACC & 0xF0;
 
-    u16 temp = ACC + memory + F.bits.C;
+        u8 YL = accL + memL + F.bits.C;
+        if (YL > 0x09) YL += 0x06;
+        temp = accH + memH + (YL & 0xF0);
+        if (temp > 0x90) temp += 0x60;
+        temp |= (YL & 0x0F);
+    }
+    else
+    {
+        temp = ACC + memory + F.bits.C;
+    }
+
     F.bits.V = (~(static_cast<u16>(ACC) ^ memory) & (static_cast<u16>(ACC) ^ temp)) >> 7;
     ACC = temp & 0xFF;
 
@@ -620,13 +631,28 @@ void CPU6502::op_ADC()
 
 void CPU6502::op_SBC()
 {
-    if (F.bits.D)
-        std::cerr << "Decimal mode!\n";
-
+    u16 temp;
     u16 memory = load8(m_absoluteAddress);
 
-    memory ^= 0x00FF;
-    u16 temp = ACC + memory + F.bits.C;
+    if (F.bits.D)
+    {
+        u8 memL = 0x09 - (memory & 0x0F);
+        u8 memH = 0x90 - (memory & 0xF0);
+        u8 accL = ACC & 0x0F;
+        u8 accH = ACC & 0xF0;
+
+        u8 YL = accL + memL + F.bits.C;
+        if (YL > 0x09) YL += 0x06;
+        temp = accH + memH + (YL & 0xF0);
+        if (temp > 0x90) temp += 0x60;
+        temp |= (YL & 0x0F);
+    }
+    else
+    {
+        memory ^= 0x00FF;
+        temp = ACC + memory + F.bits.C;
+    }
+    
     F.bits.V = (~(static_cast<u16>(ACC) ^ memory) & (static_cast<u16>(ACC) ^ temp)) >> 7;
     ACC = temp & 0xFF;
 
