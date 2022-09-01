@@ -1,17 +1,12 @@
 #include "cpu6502.hpp"
 
-#include <iostream>
-#include <iomanip>
+#include <cassert>
 
 void CPU6502::RST()
 {
     m_cyclesLeft = 0;
 
-#if TEST
-    PC = 0x400;
-#else
     PC = load16(0xFFFC); // RESET vector
-#endif
     ACC = X = Y = 0;
     SP = 0xFD;
     F.bits.U = 1;
@@ -22,10 +17,6 @@ void CPU6502::RST()
 
 void CPU6502::CLK()
 {
-    //static u32 count = 0;
-    //if (PC == 0x35bd) count++;
-    //if (PC == 0x35bd && count == 0x100) __debugbreak();
-
     if (m_cyclesLeft == 0)
     {
         u8 instruction = load8(PC++);
@@ -184,7 +175,7 @@ void CPU6502::CLK()
         case 0xFD: am_ABX(); op_SBC(); break;
         case 0xFE: am_ABX(); op_INC(); break;
         default:
-            std::cerr << "Unhandled instruction: " << std::hex << std::setw(2) << std::setfill('0') << static_cast<u16>(instruction) << '\n';
+            assert(false && "Unhandled instruction");
         }
     }
 

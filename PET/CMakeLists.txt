@@ -17,8 +17,6 @@ set(PET_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/keyboard.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/keyboard.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/memory_map.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/memory_map.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shader_sources.inl
 )
 
