@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-void CPU6502::RST()
+void CPU6502::reset()
 {
     m_cyclesLeft = 0;
 
@@ -15,7 +15,7 @@ void CPU6502::RST()
     m_cyclesLeft += 6;
 }
 
-void CPU6502::CLK()
+void CPU6502::clock()
 {
     if (m_cyclesLeft == 0)
     {

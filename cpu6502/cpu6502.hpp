@@ -58,8 +58,8 @@ public:
     template <ConstMapable ConstDevice>
     void map(const ConstDevice& device, AddressRange range);
 
-    void RST();
-    void CLK();
+    void reset();
+    void clock();
     void setIRQ(bool state) { m_irq = state; }
     void setNMI(bool state) { m_nmi = state; }
 
@@ -68,6 +68,7 @@ public:
 
     CPU6502() = default;
     CPU6502(const CPU6502&) = delete;
+    CPU6502& operator=(const CPU6502&) = delete;
 private:
     void IRQ();
     void NMI();

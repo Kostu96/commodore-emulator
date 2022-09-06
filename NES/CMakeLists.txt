@@ -5,6 +5,9 @@ set(NES_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/cartridge.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cartridge.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mapper.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mapper_000.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mapper_000.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ppu2C02.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ppu2C02.hpp
 )
@@ -26,7 +29,7 @@ target_link_libraries(${NES_TARGET_NAME} PRIVATE
 )
 
 set_target_properties(${NES_TARGET_NAME} PROPERTIES
-    VS_DEBUGGER_WORKING_DIRECTORY $<TARGET_FILE_DIR:${NES_TARGET_NAME}>
+    VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 #add_custom_command(

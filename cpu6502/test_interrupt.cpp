@@ -59,12 +59,12 @@ int main()
     u8 RSTVectorH = VECTORS.memory[3];
     VECTORS.memory[2] = 0x00;
     VECTORS.memory[3] = 0x04;
-    cpu.RST();
+    cpu.reset();
     VECTORS.memory[2] = RSTVectorL;
     VECTORS.memory[3] = RSTVectorH;
 
     while (cpu.getPC() != 0x06F5)
-        cpu.CLK();
+        cpu.clock();
 
     return 0;
 }

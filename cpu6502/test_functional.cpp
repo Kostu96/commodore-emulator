@@ -26,12 +26,12 @@ int main()
     u8 RSTVectorH = MEMORY.memory[0xFFFD];
     MEMORY.memory[0xFFFC] = 0x00;
     MEMORY.memory[0xFFFD] = 0x04;
-    cpu.RST();
+    cpu.reset();
     MEMORY.memory[0xFFFC] = RSTVectorL;
     MEMORY.memory[0xFFFD] = RSTVectorH;
 
     while (cpu.getPC() != 0x3469)
-        cpu.CLK();
+        cpu.clock();
 
     return 0;
 }

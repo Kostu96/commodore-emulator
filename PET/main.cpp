@@ -196,7 +196,7 @@ int main()
     cpu.map(io,     { 0xE800, 0xEFFF });
     cpu.map(KERNAL, { 0xF000, 0xFFFF });
 
-    cpu.RST();
+    cpu.reset();
 
     if (!glfwInit()) {
         std::cerr << "GLFW init failed!\n";
@@ -237,7 +237,7 @@ int main()
 
         for (size_t i = 0; i < 1024; ++i) {
             io.clock();
-            cpu.CLK();
+            cpu.clock();
         }
 
         FBO->unbind();
