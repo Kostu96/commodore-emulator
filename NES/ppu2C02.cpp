@@ -29,6 +29,10 @@ u8 PPU2C02::read(u16 offset)
     switch (offset & 0x0007)
     {
     case 0: break;
+    case 2:
+        data = m_status.byte & 0xE0;
+        m_status.fields.vertivalBlank = 0;
+        break;
     default:
         assert(false);
     }
